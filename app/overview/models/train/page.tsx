@@ -25,13 +25,13 @@ export default async function Index() {
         </Link>
         <Card>
           <CardHeader>
-            <CardTitle>Train Model</CardTitle>
+            <CardTitle>Train Ad Creative Model</CardTitle>
             <CardDescription>
-              Choose a name, type, and upload some photos to get started.
+              Upload images to train a model for generating ad creatives. Choose a name, select the type of ads you want to create, and upload relevant images.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            <TrainModelZone />
+            <TrainModelZone adCreativeMode={true} />
           </CardContent>
         </Card>
       </div>

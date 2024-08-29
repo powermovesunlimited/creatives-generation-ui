@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { FaFemale, FaImages, FaMale, FaRainbow } from "react-icons/fa";
+import { FaImages, FaAd, FaShoppingBag, FaLaptop } from "react-icons/fa";
 import * as z from "zod";
 import { fileUploadFormSchema } from "@/types/zod";
 import { upload } from "@vercel/blob/client";
@@ -28,7 +28,7 @@ type FormInput = z.infer<typeof fileUploadFormSchema>;
 
 const stripeIsConfigured = process.env.NEXT_PUBLIC_STRIPE_IS_ENABLED === "true";
 
-export default function TrainModelZone() {
+export default function TrainModelZone({ adCreativeMode = false }) {
   const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
@@ -38,7 +38,7 @@ export default function TrainModelZone() {
     resolver: zodResolver(fileUploadFormSchema),
     defaultValues: {
       name: "",
-      type: "man",
+      type: adCreativeMode ? "product" : "man",
     },
   });
 
@@ -121,12 +121,11 @@ export default function TrainModelZone() {
       }
     }
 
-    // console.log(blobUrls, "blobUrls");
-
     const payload = {
       urls: blobUrls,
       name: form.getValues("name").trim(),
       type: form.getValues("type"),
+      adCreativeMode: adCreativeMode,
     };
 
     // Send the JSON payload to the "/astria/train-model" endpoint
@@ -163,14 +162,14 @@ export default function TrainModelZone() {
     }
 
     toast({
-      title: "Model queued for training",
+      title: adCreativeMode ? "Ad creative model queued for training" : "Model queued for training",
       description:
         "The model was queued for training. You will receive an email when the model is ready to use.",
       duration: 5000,
     });
 
     router.push("/");
-  }, [files]);
+  }, [files, adCreativeMode]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -200,7 +199,7 @@ export default function TrainModelZone() {
                 </FormDescription>
                 <FormControl>
                   <Input
-                    placeholder="e.g. Natalie Headshots"
+                    placeholder={adCreativeMode ? "e.g. Summer Product Campaign" : "e.g. Natalie Headshots"}
                     {...field}
                     className="max-w-screen-sm"
                     autoComplete="off"
@@ -213,7 +212,9 @@ export default function TrainModelZone() {
           <div className="flex flex-col gap-4">
             <FormLabel>Type</FormLabel>
             <FormDescription>
-              Select the type of headshots you want to generate.
+              {adCreativeMode
+                ? "Select the type of ad creatives you want to generate."
+                : "Select the type of headshots you want to generate."}
             </FormDescription>
             <RadioGroup
               defaultValue={modelType}
@@ -223,52 +224,103 @@ export default function TrainModelZone() {
                 form.setValue("type", value);
               }}
             >
-              <div>
-                <RadioGroupItem
-                  value="man"
-                  id="man"
-                  className="peer sr-only"
-                  aria-label="man"
-                />
-                <Label
-                  htmlFor="man"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  <FaMale className="mb-3 h-6 w-6" />
-                  Man
-                </Label>
-              </div>
-
-              <div>
-                <RadioGroupItem
-                  value="woman"
-                  id="woman"
-                  className="peer sr-only"
-                  aria-label="woman"
-                />
-                <Label
-                  htmlFor="woman"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  <FaFemale className="mb-3 h-6 w-6" />
-                  Woman
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  value="person"
-                  id="person"
-                  className="peer sr-only"
-                  aria-label="person"
-                />
-                <Label
-                  htmlFor="person"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  <FaRainbow className="mb-3 h-6 w-6" />
-                  Unisex
-                </Label>
-              </div>
+              {adCreativeMode ? (
+                <>
+                  <div>
+                    <RadioGroupItem
+                      value="product"
+                      id="product"
+                      className="peer sr-only"
+                      aria-label="product"
+                    />
+                    <Label
+                      htmlFor="product"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <FaShoppingBag className="mb-3 h-6 w-6" />
+                      Product
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="service"
+                      id="service"
+                      className="peer sr-only"
+                      aria-label="service"
+                    />
+                    <Label
+                      htmlFor="service"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <FaLaptop className="mb-3 h-6 w-6" />
+                      Service
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="brand"
+                      id="brand"
+                      className="peer sr-only"
+                      aria-label="brand"
+                    />
+                    <Label
+                      htmlFor="brand"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <FaAd className="mb-3 h-6 w-6" />
+                      Brand
+                    </Label>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <RadioGroupItem
+                      value="man"
+                      id="man"
+                      className="peer sr-only"
+                      aria-label="man"
+                    />
+                    <Label
+                      htmlFor="man"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <FaAd className="mb-3 h-6 w-6" />
+                      Man
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="woman"
+                      id="woman"
+                      className="peer sr-only"
+                      aria-label="woman"
+                    />
+                    <Label
+                      htmlFor="woman"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <FaAd className="mb-3 h-6 w-6" />
+                      Woman
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="person"
+                      id="person"
+                      className="peer sr-only"
+                      aria-label="person"
+                    />
+                    <Label
+                      htmlFor="person"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <FaAd className="mb-3 h-6 w-6" />
+                      Unisex
+                    </Label>
+                  </div>
+                </>
+              )}
             </RadioGroup>
           </div>
           <div
@@ -277,8 +329,9 @@ export default function TrainModelZone() {
           >
             <FormLabel>Samples</FormLabel>
             <FormDescription>
-              Upload 4-10 images of the person you want to generate headshots
-              for.
+              {adCreativeMode
+                ? "Upload 4-10 images related to your product, service, or brand for ad creative generation."
+                : "Upload 4-10 images of the person you want to generate headshots for."}
             </FormDescription>
             <div className="outline-dashed outline-2 outline-gray-100 hover:outline-blue-500 w-full h-full rounded-md p-4 flex justify-center align-middle">
               <input {...getInputProps()} />
@@ -316,7 +369,7 @@ export default function TrainModelZone() {
           )}
 
           <Button type="submit" className="w-full" isLoading={isLoading}>
-            Train Model{" "}
+            {adCreativeMode ? "Train Ad Creative Model" : "Train Model"}{" "}
             {stripeIsConfigured && <span className="ml-1">(1 Credit)</span>}
           </Button>
         </form>

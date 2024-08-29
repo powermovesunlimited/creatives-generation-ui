@@ -1,65 +1,121 @@
-import blur from "/public/blur.png";
-import example from "/public/example.png";
-import result from "/public/result.png";
+import Image from 'next/image';
 
 export default function ExplainerSection() {
   return (
-    <div className="w-full max-w-6xl mt-16 p-8 bg-gray-100 rounded-lg space-y-8">
-      <h2 className="text-3xl font-bold text-center mb-8">How It Works</h2>
+    <div className="w-full max-w-7xl mx-auto px-4 py-16 bg-accent">
+      <h2 className="text-4xl font-bold text-center mb-16 text-accent-foreground">How Auto Creatives Works</h2>
 
-      {/* Step 1: Upload your images */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-4">
-          <div className="text-3xl font-bold text-blue-600 bg-white border-2 border-blue-600 rounded-full w-10 h-10 flex items-center justify-center">
-            1
+      <div className="space-y-24">
+        {/* Step 1: Input your brand details */}
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="md:w-1/2 space-y-6">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl font-bold text-primary bg-background border-2 border-primary rounded-full w-12 h-12 flex items-center justify-center">
+                1
+              </div>
+              <h3 className="text-2xl font-semibold text-accent-foreground">Input your brand details</h3>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Provide information about your brand, product, or service. Include key features, target audience, and desired ad style to guide our AI in creating the perfect ad for you.
+            </p>
           </div>
-          <h3 className="text-2xl font-semibold">Upload your images</h3>
+          <div className="md:w-1/2 bg-card p-6 rounded-lg shadow-lg">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded-full bg-primary"></div>
+                <span className="text-card-foreground">Brand Name: Chocolate Delight</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded-full bg-secondary"></div>
+                <span className="text-card-foreground">Product: Artisanal Dark Chocolate</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded-full bg-accent"></div>
+                <span className="text-card-foreground">Target: Chocolate enthusiasts, 25-45</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded-full bg-muted"></div>
+                <span className="text-card-foreground">Style: Luxurious and indulgent</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-gray-600 text-center">
-          Upload 4+ high-quality selfies: front facing, 1 person in frame, no
-          glasses or hats.
-        </p>
-        <img
-          src={example.src}
-          alt="AI Headshot example"
-          className="rounded-lg object-cover w-full md:w-3/4 lg:w-1/2 mx-auto"
-        />
-      </div>
 
-      {/* Step 2: Train your model */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-4">
-          <div className="text-3xl font-bold text-blue-600 bg-white border-2 border-blue-600 rounded-full w-10 h-10 flex items-center justify-center">
-            2
+        {/* Step 2: AI generates concepts */}
+        <div className="flex flex-col md:flex-row-reverse items-center gap-8">
+          <div className="md:w-1/2 space-y-6">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl font-bold text-primary bg-background border-2 border-primary rounded-full w-12 h-12 flex items-center justify-center">
+                2
+              </div>
+              <h3 className="text-2xl font-semibold text-accent-foreground">AI generates concepts</h3>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Our advanced AI analyzes your input and generates multiple creative concepts for your ad. This process takes just a few minutes, producing unique and tailored designs.
+            </p>
           </div>
-          <h3 className="text-2xl font-semibold">Our AI gets to work</h3>
+          <div className="md:w-1/2 relative h-96">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Image
+                src="/ad_2_chocolate_brand_demo.png"
+                alt="AI generated chocolate ad concept 1"
+                width={300}
+                height={300}
+                className="rounded-lg shadow-lg transform -rotate-3 z-10"
+              />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Image
+                src="/ad_0_chocolate_brand_demo.png"
+                alt="AI generated chocolate ad concept 2"
+                width={280}
+                height={280}
+                className="rounded-lg shadow-lg transform translate-x-16 translate-y-16 rotate-3 z-20"
+              />
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-gray-600 text-center">
-          The AI magic takes ~20 minutes. You'll get an email when its ready!
-        </p>
-        <img
-          src={blur.src}
-          alt="AI Headshot blur"
-          className="rounded-lg object-cover w-full md:w-3/4 lg:w-1/2 mx-auto"
-        />
-      </div>
 
-      {/* Step 3: Generate images */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-4">
-          <div className="text-3xl font-bold text-blue-600 bg-white border-2 border-blue-600 rounded-full w-10 h-10 flex items-center justify-center">
-            3
+        {/* Step 3: Review and select */}
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="md:w-1/2 space-y-6">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl font-bold text-primary bg-background border-2 border-primary rounded-full w-12 h-12 flex items-center justify-center">
+                3
+              </div>
+              <h3 className="text-2xl font-semibold text-accent-foreground">Review and select</h3>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Review the generated ad creatives and select your favorites. You can request refinements or generate new variations until you find the perfect ad for your campaign.
+            </p>
           </div>
-          <h3 className="text-2xl font-semibold">Get amazing headshots</h3>
+          <div className="md:w-1/2 grid grid-cols-2 gap-4">
+            <Image
+              src="/ad_0_chocolate_brand_demo.png"
+              alt="Final chocolate ad 1"
+              width={300}
+              height={300}
+              className="rounded-lg shadow-lg"
+            />
+            <Image
+              src="/ad_1_chocolate_brand_demo.png"
+              alt="Final chocolate ad 2"
+              width={300}
+              height={300}
+              className="rounded-lg shadow-lg"
+            />
+            <Image
+              src="/ad_2_chocolate_brand_demo.png"
+              alt="Final chocolate ad 3"
+              width={300}
+              height={300}
+              className="rounded-lg shadow-lg"
+            />
+            <div className="bg-card rounded-lg shadow-lg flex items-center justify-center">
+              <span className="text-4xl text-card-foreground">+</span>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-gray-600 text-center">
-          Once your model is trained, we'll give you amazing headshots!
-        </p>
-        <img
-          src={result.src}
-          alt="AI Headshot result"
-          className="rounded-lg object-cover w-full md:w-3/4 lg:w-1/2 mx-auto"
-        />
       </div>
     </div>
   );

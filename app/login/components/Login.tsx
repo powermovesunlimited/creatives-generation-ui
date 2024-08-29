@@ -129,11 +129,8 @@ export const Login = ({
                     required: true,
                     validate: {
                       emailIsValid: (value: string) =>
-                        /^[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
+                        /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
                         "Please enter a valid email",
-                      emailDoesntHavePlus: (value: string) =>
-                        /^[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
-                        "Email addresses with a '+' are not allowed",
                       emailIsntDisposable: (value: string) =>
                         !disposableDomains.includes(value.split("@")[1]) ||
                         "Please use a permanent email address",

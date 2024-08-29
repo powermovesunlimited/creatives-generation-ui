@@ -23,10 +23,13 @@ export async function GET(req: NextRequest) {
     const supabase = createRouteHandlerClient<Database>({ cookies });
 
     try {
-      await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-      // ater exchanging the code, we should check if the user has a feature-flag row and a credits now, if not, we should create one
+      if (error) {
+        throw error;
+      }
 
+      // After exchanging the code, we should check if the user has a feature-flag row and credits now, if not, we should create one
       const { data: user, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
@@ -38,6 +41,17 @@ export async function GET(req: NextRequest) {
           `${requestUrl.origin}/login/failed?err=500`
         );
       }
+
+      // Set the auth cookie
+      const response = NextResponse.redirect(new URL(next, req.url));
+      response.cookies.set('sb-auth-token', data.session.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+        path: '/',
+      });
+
+      return response;
     } catch (error) {
       if (isAuthApiError(error)) {
         console.error(

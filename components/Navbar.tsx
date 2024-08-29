@@ -36,13 +36,19 @@ export default async function Navbar() {
     <div className="flex w-full px-4 lg:px-40 py-4 items-center border-b text-center gap-8 justify-between">
       <div className="flex gap-2 h-full">
         <Link href="/">
-          <h2 className="font-bold">Headshots AI</h2>
+          <h2 className="font-bold">Auto Creatives</h2>
         </Link>
       </div>
       {user && (
         <div className="hidden lg:flex flex-row gap-2">
           <Link href="/overview">
-            <Button variant={"ghost"}>Home</Button>
+            <Button variant={"ghost"}>Dashboard</Button>
+          </Link>
+          <Link href="/generate-ad">
+            <Button variant={"ghost"}>Generate Ads</Button>
+          </Link>
+          <Link href="/ad-gallery">
+            <Button variant={"ghost"}>Ad Gallery</Button>
           </Link>
           {stripeIsConfigured && (
             <Link href="/get-credits">
@@ -68,6 +74,10 @@ export default async function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel className="text-primary text-center overflow-hidden text-ellipsis">{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/ad-gallery">
+                  <DropdownMenuItem>Ad Gallery</DropdownMenuItem>
+                </Link>
                 <DropdownMenuSeparator />
                 <form action="/auth/sign-out" method="post">
                   <Button

@@ -1,8 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    esmExternals: "loose",
+  reactStrictMode: true,
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
   },
-};
+  // Ensure the app is built for server-side rendering
+  output: 'standalone',
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

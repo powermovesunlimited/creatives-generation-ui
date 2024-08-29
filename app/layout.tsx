@@ -6,8 +6,8 @@ import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
-  title: "Headshots AI",
-  description: "Generate awesome headshots in minutes using AI",
+  title: "Auto Creatives - AI Ad Generation",
+  description: "Generate stunning ad creatives in minutes using AI",
 };
 
 export default function RootLayout({ children }: any) {
