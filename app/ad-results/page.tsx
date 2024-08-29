@@ -50,7 +50,7 @@ function AdResultsContent() {
       setError(null);
 
       try {
-        const response = await fetch("http://creatives-generation-app.azurewebsites.net/generate_conversion_ad", {
+        const response = await fetch("https://creatives-generation-app.azurewebsites.net/generate_conversion_ad", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

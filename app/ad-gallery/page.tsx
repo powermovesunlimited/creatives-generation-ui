@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
@@ -34,46 +34,39 @@ const gradients = [
   'from-indigo-100 to-purple-100'
 ];
 
-function LoadingSpinner() {
-  return (
-    <div className="container mx-auto p-4 flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
-    </div>
-  );
-}
-
 function AdGalleryContent() {
   const searchParams = useSearchParams();
   const [adGenerations, setAdGenerations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function fetchAdGenerations() {
-      setError(null);
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('ad_generations')
-          .select('*')
-          .order('created_at', { ascending: false });
+  const fetchAdGenerations = useCallback(async () => {
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('ad_generations')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          setError(error.message);
-        } else {
-          setAdGenerations(data || []);
-        }
-      } catch (err) {
-        setError('An unexpected error occurred');
-      } finally {
-        setIsLoading(false);
+      if (error) {
+        setError(error.message);
+      } else {
+        setAdGenerations(prevGenerations => {
+          if (JSON.stringify(prevGenerations) !== JSON.stringify(data)) {
+            return data || [];
+          }
+          return prevGenerations;
+        });
       }
+    } catch (err) {
+      setError('An unexpected error occurred');
     }
+  }, []);
 
+  useEffect(() => {
     fetchAdGenerations();
     const interval = setInterval(fetchAdGenerations, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAdGenerations]);
 
   useEffect(() => {
     const recordId = searchParams.get('recordId');
@@ -84,10 +77,6 @@ function AdGalleryContent() {
       }
     }
   }, [searchParams, adGenerations]);
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
 
   if (error) {
     return (
@@ -179,9 +168,5 @@ function AdGalleryContent() {
 }
 
 export default function AdGallery() {
-  return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <AdGalleryContent />
-    </Suspense>
-  );
+  return <AdGalleryContent />;
 }
