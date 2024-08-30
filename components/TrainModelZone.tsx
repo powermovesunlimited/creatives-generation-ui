@@ -115,7 +115,7 @@ export default function TrainModelZone({ adCreativeMode = false }) {
       for (const file of files) {
         const blob = await upload(file.name, file, {
           access: "public",
-          handleUploadUrl: "/astria/train-model/image-upload",
+          handleUploadUrl: "/api/upload",
         });
         blobUrls.push(blob.url);
       }
@@ -128,8 +128,8 @@ export default function TrainModelZone({ adCreativeMode = false }) {
       adCreativeMode: adCreativeMode,
     };
 
-    // Send the JSON payload to the "/astria/train-model" endpoint
-    const response = await fetch("/astria/train-model", {
+    // Send the JSON payload to the "/api/train-model" endpoint
+    const response = await fetch("/api/train-model", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

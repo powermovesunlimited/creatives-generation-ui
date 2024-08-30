@@ -41,9 +41,6 @@ export default async function Navbar() {
       </div>
       {user && (
         <div className="hidden lg:flex flex-row gap-2">
-          <Link href="/overview">
-            <Button variant={"ghost"}>Dashboard</Button>
-          </Link>
           <Link href="/generate-ad">
             <Button variant={"ghost"}>Generate Ads</Button>
           </Link>

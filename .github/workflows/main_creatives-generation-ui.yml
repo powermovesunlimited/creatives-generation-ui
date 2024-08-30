@@ -37,7 +37,6 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          NEXT_PUBLIC_ASTRIA_API_URL=${{ secrets.NEXT_PUBLIC_ASTRIA_API_URL }}
           NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE }}
           NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE }}
           STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
@@ -60,3 +59,16 @@ jobs:
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_dea20b89ecb8405ba4583d1e175e4e27 }}
         images: 'creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}'
+
+    - name: Set Web App settings
+      uses: azure/appservice-settings@v1
+      with:
+        app-name: 'creatives-generation-ui'
+        app-settings-json: |
+          [
+            {
+              "name": "PORT",
+              "value": "3000"
+            }
+          ]
+      id: settings

@@ -14,8 +14,8 @@ RUN npm ci
 COPY . .
 
 # Set environment variables for Next.js
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Set build arguments
 ARG NEXT_PUBLIC_SUPABASE_URL
@@ -34,7 +34,6 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-ENV NEXT_PUBLIC_ASTRIA_API_URL=$NEXT_PUBLIC_ASTRIA_API_URL
 ENV NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=$NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE
 ENV NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=$NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE
 ENV STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
@@ -58,14 +57,26 @@ RUN echo '#!/bin/sh' > build.sh && \
     echo 'echo "Environment variables:"' >> build.sh && \
     echo 'env | grep NEXT_PUBLIC' >> build.sh && \
     echo 'echo "Starting build process..."' >> build.sh && \
-    echo 'npm run build' >> build.sh && \
+    echo 'npm run build || { echo "Build failed!"; exit 1; }' >> build.sh && \
     echo 'echo "Build process completed"' >> build.sh && \
+    echo 'echo "Checking if .next directory exists:"' >> build.sh && \
+    echo '[ -d ".next" ] && echo ".next directory exists" || { echo ".next directory does not exist"; exit 1; }' >> build.sh && \
     echo 'echo "Content of .next directory:"' >> build.sh && \
-    echo 'ls -la .next' >> build.sh && \
+    ls -la .next || echo ".next directory not found, skipping ls command" >> build.sh && \
     chmod +x build.sh
 
 # Build the Next.js application
 RUN ./build.sh
+
+# Verify the existence of prerender-manifest.json
+RUN if [ ! -f /app/.next/prerender-manifest.json ]; then \
+        echo "prerender-manifest.json not found. Contents of .next directory:" && \
+        ls -la /app/.next && \
+        echo "Build failed. Exiting." && \
+        exit 1; \
+    else \
+        echo "prerender-manifest.json found. Build successful."; \
+    fi
 
 # Expose the port the app runs on
 EXPOSE 3000
