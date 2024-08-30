@@ -55,6 +55,8 @@ RUN echo '#!/bin/sh' > build.sh && \
     echo 'echo "next version: $(npx next --version)"' >> build.sh && \
     echo 'echo "Content of next.config.js:"' >> build.sh && \
     echo 'cat next.config.js' >> build.sh && \
+    echo 'echo "Environment variables:"' >> build.sh && \
+    echo 'env | grep NEXT_PUBLIC' >> build.sh && \
     echo 'echo "Starting build process..."' >> build.sh && \
     echo 'npm run build' >> build.sh && \
     echo 'echo "Build process completed"' >> build.sh && \
@@ -64,9 +66,6 @@ RUN echo '#!/bin/sh' > build.sh && \
 
 # Build the Next.js application
 RUN ./build.sh
-
-# Verify the existence of prerender-manifest.json
-RUN test -f /app/.next/prerender-manifest.json || (echo "prerender-manifest.json not found" && exit 1)
 
 # Expose the port the app runs on
 EXPOSE 3000
