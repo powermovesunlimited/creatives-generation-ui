@@ -4,6 +4,8 @@ import { isAuthApiError } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export async function GET(req: NextRequest) {
   const requestUrl = new URL(req.url);
   const code = requestUrl.searchParams.get("code");
@@ -38,12 +40,12 @@ export async function GET(req: NextRequest) {
           userError
         );
         return NextResponse.redirect(
-          `${requestUrl.origin}/login/failed?err=500`
+          `${SITE_URL}/login/failed?err=500`
         );
       }
 
       // Set the auth cookie
-      const response = NextResponse.redirect(new URL(next, req.url));
+      const response = NextResponse.redirect(new URL(next, SITE_URL));
       response.cookies.set('sb-auth-token', data.session.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -59,16 +61,16 @@ export async function GET(req: NextRequest) {
           error
         );
         return NextResponse.redirect(
-          `${requestUrl.origin}/login/failed?err=AuthApiError`
+          `${SITE_URL}/login/failed?err=AuthApiError`
         );
       } else {
         console.error("[login] [session] [500] Something wrong: ", error);
         return NextResponse.redirect(
-          `${requestUrl.origin}/login/failed?err=500`
+          `${SITE_URL}/login/failed?err=500`
         );
       }
     }
   }
 
-  return NextResponse.redirect(new URL(next, req.url));
+  return NextResponse.redirect(new URL(next, SITE_URL));
 }

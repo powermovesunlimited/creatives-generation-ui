@@ -129,8 +129,7 @@ export const Login = ({
     inviteToken = searchParams["inviteToken"];
   }
 
-  const protocol = host?.includes("localhost") ? "http" : "https";
-  const redirectUrl = `${protocol}://${host}/auth/callback`;
+  const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
 
   console.log({ redirectUrl });
 
