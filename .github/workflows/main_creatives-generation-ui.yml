@@ -32,6 +32,17 @@ jobs:
         push: true
         tags: creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}
         file: ./Dockerfile
+        build-args: |
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_ASTRIA_API_URL=${{ secrets.NEXT_PUBLIC_ASTRIA_API_URL }}
+          NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE }}
+          NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WEBHOOK_SIGNING_SECRET=${{ secrets.WEBHOOK_SIGNING_SECRET }}
 
   deploy:
     runs-on: ubuntu-latest
