@@ -39,6 +39,7 @@ export default function AdResultsClient() {
       setError(null);
 
       try {
+        console.log("Generating ad with Form data:", formData);
         const response = await fetch("https://creatives-generation-app.azurewebsites.net/generate_conversion_ad", {
           method: "POST",
           headers: {
