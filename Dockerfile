@@ -1,7 +1,6 @@
-# Use the official Node.js image
-FROM node:18.20.0
+# Build stage
+FROM node:22.3.0-alpine AS builder
 
-# Set the working directory
 WORKDIR /app
 
 # Copy package.json and package-lock.json
@@ -13,73 +12,26 @@ RUN npm ci
 # Copy the rest of the application code
 COPY . .
 
-# Set environment variables for Next.js
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# Set build arguments
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-ARG NEXT_PUBLIC_SITE_URL
-ARG NEXT_PUBLIC_ASTRIA_API_URL
-ARG NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE
-ARG NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE
-ARG STRIPE_SECRET_KEY
-ARG SUPABASE_SERVICE_ROLE_KEY
-ARG WEBHOOK_SIGNING_SECRET
-
-# Set environment variables from build arguments
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-ENV NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=$NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE
-ENV NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=$NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE
-ENV STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
-ENV SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
-ENV WEBHOOK_SIGNING_SECRET=$WEBHOOK_SIGNING_SECRET
-
-# Debug: Check Node.js version and npm version
-RUN node --version && npm --version
-
-# Create a shell script to run the build command with debugging
-RUN echo '#!/bin/sh' > build.sh && \
-    echo 'set -x' >> build.sh && \
-    echo 'echo "Current working directory: $(pwd)"' >> build.sh && \
-    echo 'echo "Content of current directory:"' >> build.sh && \
-    echo 'ls -la' >> build.sh && \
-    echo 'echo "Node.js version: $(node --version)"' >> build.sh && \
-    echo 'echo "npm version: $(npm --version)"' >> build.sh && \
-    echo 'echo "next version: $(npx next --version)"' >> build.sh && \
-    echo 'echo "Content of next.config.js:"' >> build.sh && \
-    echo 'cat next.config.js' >> build.sh && \
-    echo 'echo "Environment variables:"' >> build.sh && \
-    echo 'env | grep NEXT_PUBLIC' >> build.sh && \
-    echo 'echo "Starting build process..."' >> build.sh && \
-    echo 'npm run build || { echo "Build failed!"; exit 1; }' >> build.sh && \
-    echo 'echo "Build process completed"' >> build.sh && \
-    echo 'echo "Checking if .next directory exists:"' >> build.sh && \
-    echo '[ -d ".next" ] && echo ".next directory exists" || { echo ".next directory does not exist"; exit 1; }' >> build.sh && \
-    echo 'echo "Content of .next directory:"' >> build.sh && \
-    ls -la .next || echo ".next directory not found, skipping ls command" >> build.sh && \
-    chmod +x build.sh
-
 # Build the Next.js application
-RUN ./build.sh
+RUN npm run build
 
-# Verify the existence of prerender-manifest.json
-RUN if [ ! -f /app/.next/prerender-manifest.json ]; then \
-        echo "prerender-manifest.json not found. Contents of .next directory:" && \
-        ls -la /app/.next && \
-        echo "Build failed. Exiting." && \
-        exit 1; \
-    else \
-        echo "prerender-manifest.json found. Build successful."; \
-    fi
+# Production stage
+FROM node:22.3.0-alpine AS runner
+
+WORKDIR /app
+
+# Copy necessary files from builder stage
+COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Expose the port the app runs on
 EXPOSE 3000
 
+# Set environment variables
+ENV NODE_ENV production
+ENV PORT 3000
+
 # Start the application
-CMD ["node", "node_modules/next/dist/bin/next", "start"]
+CMD ["node", "server.js"]
