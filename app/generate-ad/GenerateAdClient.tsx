@@ -13,24 +13,52 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { FaArrowLeft, FaMagic } from "react-icons/fa";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+// Define the types based on the ConversionAdRequest model
+type RequestData = {
+  headline: string;
+  body_text: string;
+  additional_description?: string;
+  image?: string;
+  number_of_variations: number;
+  call_to_action_text: string;
+  instructional_prompt: string;
+  dimensions?: string;
+};
 
 export default function GenerateAdClient() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RequestData>({
     headline: "",
     body_text: "",
     additional_description: "",
     image: "Generate with tool",
     call_to_action_text: "",
     instructional_prompt: "",
-    number_of_variations: "1",
+    number_of_variations: 1,
     dimensions: "1080x1080",
   });
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleInputChange = (e) => {
+  useEffect(() => {
+    // Populate form data from URL parameters
+    const paramsData: Partial<RequestData> = {};
+    searchParams.forEach((value, key) => {
+      if (key in formData) {
+        if (key === "number_of_variations") {
+          paramsData[key as keyof RequestData] = parseInt(value, 10) as any;
+        } else {
+          paramsData[key as keyof RequestData] = value as any;
+        }
+      }
+    });
+    setFormData((prevData) => ({ ...prevData, ...paramsData }));
+  }, [searchParams]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
@@ -38,23 +66,25 @@ export default function GenerateAdClient() {
     }));
   };
 
-  const handleSelectChange = (name, value) => {
+  const handleSelectChange = (name: keyof RequestData, value: string) => {
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: name === "number_of_variations" ? parseInt(value, 10) : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const queryString = new URLSearchParams(formData).toString();
+    const queryString = new URLSearchParams(
+      Object.entries(formData).map(([key, value]) => [key, value.toString()])
+    ).toString();
     router.push(`/ad-results?${queryString}`);
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto p-4">
       <div className="flex flex-1 flex-col gap-4">
-        <Link href="/overview" className="text-sm w-fit">
+        <Link href="/ad-gallery" className="text-sm w-fit">
           <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100 transition-colors">
             <FaArrowLeft />
             Go Back
@@ -132,7 +162,7 @@ export default function GenerateAdClient() {
                   <label htmlFor="number_of_variations" className="font-medium text-gray-700">Number of Variations</label>
                   <Select
                     onValueChange={(value) => handleSelectChange("number_of_variations", value)}
-                    value={formData.number_of_variations}
+                    value={formData.number_of_variations.toString()}
                   >
                     <SelectTrigger id="number_of_variations" className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow">
                       <SelectValue placeholder="Select number of variations" />
@@ -154,10 +184,7 @@ export default function GenerateAdClient() {
                       <SelectValue placeholder="Select ad dimensions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1200x628">1200x628 (Facebook/LinkedIn)</SelectItem>
                       <SelectItem value="1080x1080">1080x1080 (Instagram)</SelectItem>
-                      <SelectItem value="1080x1920">1080x1920 (Instagram Story)</SelectItem>
-                      <SelectItem value="1200x900">1200x900 (Twitter)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaArrowLeft } from "react-icons/fa";
@@ -21,6 +21,15 @@ function LoadingSpinner() {
   );
 }
 
+// Debounce function
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: any[]) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
 export default function AdResultsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,48 +38,60 @@ export default function AdResultsClient() {
   const [status, setStatus] = useState<string | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
   const [requestParams, setRequestParams] = useState<Record<string, string> | null>(null);
+  const isGeneratingRef = useRef(false);
+
+  const generateAd = useCallback(async (formData: Record<string, string>) => {
+    if (isGeneratingRef.current) return;
+    isGeneratingRef.current = true;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log("Generating ad with Form data:", formData);
+      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+      console.log("Server URL:", serverUrl);
+      if (!serverUrl) {
+        throw new Error("SERVER_URL is not defined in the environment variables");
+      }
+      const response = await fetch(`${serverUrl}/generate_conversion_ad`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === "success") {
+          setRecordId(result.data.record_id);
+          setStatus("processing");
+          // Redirect to ad gallery page
+          router.push(`/ad-gallery?recordId=${result.data.record_id}`);
+        } else {
+          setError("Failed to generate ad: " + result.message);
+          setIsLoading(false);
+        }
+      } else {
+        setError("Failed to generate ad");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      setError("Error generating ad: " + (error as Error).message);
+      setIsLoading(false);
+    } finally {
+      isGeneratingRef.current = false;
+    }
+  }, [router]);
+
+  const debouncedGenerateAd = useCallback(debounce(generateAd, 300), [generateAd]);
 
   useEffect(() => {
     const formData = Object.fromEntries(searchParams.entries());
     setRequestParams(formData);
-
-    const generateAd = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        console.log("Generating ad with Form data:", formData);
-        const response = await fetch("https://creatives-generation-app.azurewebsites.net/generate_conversion_ad", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.status === "success") {
-            setRecordId(result.data.record_id);
-            setStatus("processing");
-            // Redirect to ad gallery page
-            router.push(`/ad-gallery?recordId=${result.data.record_id}`);
-          } else {
-            setError("Failed to generate ad: " + result.message);
-            setIsLoading(false);
-          }
-        } else {
-          setError("Failed to generate ad");
-          setIsLoading(false);
-        }
-      } catch (error) {
-        setError("Error generating ad: " + (error as Error).message);
-        setIsLoading(false);
-      }
-    };
-
-    generateAd();
-  }, [searchParams, router]);
+    debouncedGenerateAd(formData);
+  }, [searchParams, debouncedGenerateAd]);
 
   if (isLoading) {
     return <LoadingSpinner />;

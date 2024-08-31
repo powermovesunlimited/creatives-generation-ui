@@ -7,7 +7,7 @@ import { Database } from "@/types/supabase";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { AuthError } from "@supabase/supabase-js";
 import disposableDomains from "disposable-email-domains";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { AiOutlineGoogle } from "react-icons/ai";
 import { WaitingForMagicLink } from "./WaitingForMagicLink";
@@ -75,6 +75,20 @@ export const Login = ({
     watch,
   } = useForm<Inputs>();
 
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        // Update the authentication state
+        window.dispatchEvent(new Event('auth-state-changed'));
+        router.push("/ad-gallery");
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase.auth, router]);
+
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsSubmitting(true);
     try {
@@ -85,7 +99,6 @@ export const Login = ({
         await signUpWithEmail(data.email, data.password);
       } else {
         await signInWithEmail(data.email, data.password);
-        router.push("/ad-gallery");
       }
       setIsSubmitting(false);
       if (!isSignUp) {
@@ -134,7 +147,7 @@ export const Login = ({
   console.log({ redirectUrl });
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl,
