@@ -58,8 +58,16 @@ export default function Navbar() {
 
     window.addEventListener('auth-state-changed', handleAuthChange);
 
+    // Add a listener for custom 'anonymous-user-created' event
+    const handleAnonymousUserCreated = () => {
+      fetchUserAndCredits();
+    };
+
+    window.addEventListener('anonymous-user-created', handleAnonymousUserCreated);
+
     return () => {
       window.removeEventListener('auth-state-changed', handleAuthChange);
+      window.removeEventListener('anonymous-user-created', handleAnonymousUserCreated);
     };
   }, [supabase]);
 

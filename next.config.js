@@ -21,6 +21,7 @@ const nextConfig = {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     WEBHOOK_SIGNING_SECRET: process.env.WEBHOOK_SIGNING_SECRET,
     NEXT_PUBLIC_SERVER_URL: process.env.SERVER_URL,
+    NEXT_PUBLIC_STRIPE_IS_ENABLED: process.env.NEXT_PUBLIC_STRIPE_IS_ENABLED,
   },
   images: {
     domains: ['creativegenstorage.blob.core.windows.net'],

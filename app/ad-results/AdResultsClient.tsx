@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FaArrowLeft } from "react-icons/fa";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
+import { toast } from "@/components/ui/use-toast";
 
 function LoadingSpinner() {
   return (
@@ -55,6 +56,33 @@ export default function AdResultsClient() {
     }
   }, [supabase.auth, router]);
 
+  const deductCredit = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from('credits')
+      .select('credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching credits:', error);
+      throw new Error('Failed to fetch credits');
+    }
+
+    if (data.credits < 1) {
+      throw new Error('Not enough credits');
+    }
+
+    const { error: updateError } = await supabase
+      .from('credits')
+      .update({ credits: data.credits - 1 })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating credits:', updateError);
+      throw new Error('Failed to update credits');
+    }
+  }, [supabase]);
+
   const generateAd = useCallback(async (formData: Record<string, string>) => {
     if (isGeneratingRef.current) return;
     isGeneratingRef.current = true;
@@ -75,17 +103,43 @@ export default function AdResultsClient() {
         throw new Error("User not authenticated");
       }
 
+      // Generate a unique transaction ID
+      const transactionId = `${user.id}_${Date.now()}`;
+
+      // Check if this transaction has already been processed
+      const { data: existingTransaction } = await supabase
+        .from('ad_transactions')
+        .select('id')
+        .eq('transaction_id', transactionId)
+        .single();
+
+      if (existingTransaction) {
+        console.log('Transaction already processed');
+        setIsLoading(false);
+        return;
+      }
+
+      // Deduct a credit before generating the ad
+      await deductCredit(user.id);
+
       const response = await fetch(`${serverUrl}/generate_conversion_ad`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...formData, user_id: user.id }),
+        body: JSON.stringify({ ...formData, user_id: user.id, transaction_id: transactionId }),
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.status === "success") {
+          // Record the transaction
+          await supabase.from('ad_transactions').insert({
+            user_id: user.id,
+            transaction_id: transactionId,
+            ad_id: result.data.record_id
+          });
+
           setRecordId(result.data.record_id);
           setStatus("processing");
           // Redirect to ad gallery page
@@ -99,12 +153,21 @@ export default function AdResultsClient() {
         setIsLoading(false);
       }
     } catch (error) {
-      setError("Error generating ad: " + (error as Error).message);
-      setIsLoading(false);
+      if ((error as Error).message === 'Not enough credits') {
+        toast({
+          title: "Error",
+          description: "You don't have enough credits to generate an ad. Please purchase more credits.",
+          variant: "destructive",
+        });
+        router.push('/get-credits');
+      } else {
+        setError("Error generating ad: " + (error as Error).message);
+        setIsLoading(false);
+      }
     } finally {
       isGeneratingRef.current = false;
     }
-  }, [router, getCurrentUser]);
+  }, [router, getCurrentUser, deductCredit, supabase]);
 
   const debouncedGenerateAd = useCallback(debounce(generateAd, 300), [generateAd]);
 

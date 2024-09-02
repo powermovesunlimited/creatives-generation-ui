@@ -1,32 +1,23 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { FaMagic, FaRobot, FaPencilAlt, FaImage, FaArrowRight } from 'react-icons/fa';
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Link from "next/link";
-import { FaArrowLeft, FaMagic } from "react-icons/fa";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { handleAdSubmission, RequestData } from "./handleAdSubmission";
+import { EmailPromptDialog } from "@/components/EmailPromptDialog";
+import { generateAIContent } from "./generateAIContent";
 
-// Define the types based on the ConversionAdRequest model
-type RequestData = {
-  headline: string;
-  body_text: string;
-  additional_description?: string;
-  image?: string;
-  number_of_variations: number;
-  call_to_action_text: string;
-  instructional_prompt: string;
-  dimensions?: string;
-};
+const businessTypes = [
+  "Restaurant", "Real Estate", "Fitness", "E-commerce", "Technology",
+  "Healthcare", "Education", "Travel", "Beauty", "Finance",
+];
 
 export default function GenerateAdClient() {
   const [formData, setFormData] = useState<RequestData>({
@@ -39,12 +30,15 @@ export default function GenerateAdClient() {
     number_of_variations: 1,
     dimensions: "1080x1080",
   });
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [selectedBusinessType, setSelectedBusinessType] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Populate form data from URL parameters
     const paramsData: Partial<RequestData> = {};
     searchParams.forEach((value, key) => {
       if (key in formData) {
@@ -73,132 +67,176 @@ export default function GenerateAdClient() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleGenerateAIContent = async () => {
+    setIsGenerating(true);
+    setAiError('');
+    try {
+      const generatedContent = await generateAIContent(selectedBusinessType);
+      setFormData((prevData) => ({
+        ...prevData,
+        ...generatedContent,
+      }));
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      setAiError('Failed to generate AI content. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const queryString = new URLSearchParams(
-      Object.entries(formData).map(([key, value]) => [key, value.toString()])
-    ).toString();
-    router.push(`/ad-results?${queryString}`);
+    if (!formData.instructional_prompt) {
+      alert("Ad Design Instructions are mandatory. Please provide instructions for the ad design.");
+      return;
+    }
+    await handleAdSubmission(formData, router, setShowEmailPrompt);
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4">
-      <div className="flex flex-1 flex-col gap-4">
-        <Link href="/ad-gallery" className="text-sm w-fit">
-          <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100 transition-colors">
-            <FaArrowLeft />
-            Go Back
-          </Button>
-        </Link>
-        <Card className="border-2 border-blue-500 shadow-lg">
-          <CardHeader className="bg-blue-50">
-            <CardTitle className="flex items-center text-blue-700 text-2xl">
-              <FaMagic className="mr-2" />
-              Generate Ad Creative
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Provide information about your ad to generate creative variations.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 mt-4">
+    <Card className="w-full max-w-4xl mx-auto shadow-lg overflow-hidden">
+      <CardContent className="p-0">
+        <Tabs defaultValue="ai" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-t-lg">
+            <TabsTrigger value="ai" className="py-4 text-lg font-semibold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-blue-600">
+              <FaRobot className="mr-2 inline" /> AI-Assisted
+            </TabsTrigger>
+            <TabsTrigger value="custom" className="py-4 text-lg font-semibold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-blue-600">
+              <FaPencilAlt className="mr-2 inline" /> Custom Design
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="p-6 bg-white">
+            <h2 className="text-3xl font-bold mb-6 text-gray-800">AI-Powered Ad Creator</h2>
+
+            <TabsContent value="ai">
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Business Type</label>
+                <Select
+                  onValueChange={(value) => setSelectedBusinessType(value)}
+                  value={selectedBusinessType}
+                >
+                  <SelectTrigger className="w-full border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all">
+                    <SelectValue placeholder="Choose your business type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businessTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={handleGenerateAIContent}
+                disabled={!selectedBusinessType || isGenerating}
+                className="w-full mb-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all duration-300 flex items-center justify-center"
+              >
+                {isGenerating ? (
+                  <>Generating... <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="ml-2"><FaRobot /></motion.div></>
+                ) : (
+                  <>Generate AI Content <FaMagic className="ml-2" /></>
+                )}
+              </Button>
+              {aiError && <p className="text-red-500 mb-4">{aiError}</p>}
+            </TabsContent>
+
+            <TabsContent value="custom">
+              <p className="text-gray-600 mb-6">
+                Unleash your creativity! Customize your ad content below or switch to the AI-assisted tab for quick inspiration.
+              </p>
+            </TabsContent>
+
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="headline" className="font-medium text-gray-700">Headline</label>
-                  <Input
-                    id="headline"
-                    name="headline"
-                    placeholder="Enter your ad headline"
-                    value={formData.headline}
-                    onChange={handleInputChange}
-                    className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="body_text" className="font-medium text-gray-700">Body Text</label>
-                  <Textarea
-                    id="body_text"
-                    name="body_text"
-                    placeholder="Enter the main text for your ad"
-                    value={formData.body_text}
-                    onChange={handleInputChange}
-                    className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="additional_description" className="font-medium text-gray-700">Additional Description</label>
-                  <Textarea
-                    id="additional_description"
-                    name="additional_description"
-                    placeholder="Any additional details or context"
-                    value={formData.additional_description}
-                    onChange={handleInputChange}
-                    className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="call_to_action_text" className="font-medium text-gray-700">Call to Action Text</label>
-                  <Input
-                    id="call_to_action_text"
-                    name="call_to_action_text"
-                    placeholder="e.g., 'Shop Now', 'Learn More'"
-                    value={formData.call_to_action_text}
-                    onChange={handleInputChange}
-                    className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="instructional_prompt" className="font-medium text-gray-700">Instructional Prompt</label>
-                  <Textarea
-                    id="instructional_prompt"
-                    name="instructional_prompt"
-                    placeholder="Any specific instructions for the AI"
-                    value={formData.instructional_prompt}
-                    onChange={handleInputChange}
-                    className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="number_of_variations" className="font-medium text-gray-700">Number of Variations</label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("number_of_variations", value)}
-                    value={formData.number_of_variations.toString()}
-                  >
-                    <SelectTrigger id="number_of_variations" className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow">
-                      <SelectValue placeholder="Select number of variations" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="dimensions" className="font-medium text-gray-700">Dimensions</label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("dimensions", value)}
-                    value={formData.dimensions}
-                  >
-                    <SelectTrigger id="dimensions" className="border-2 focus:ring-2 focus:ring-blue-500 transition-shadow">
-                      <SelectValue placeholder="Select ad dimensions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1080x1080">1080x1080 (Instagram)</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="grid gap-6">
+                <Input
+                  name="headline"
+                  placeholder="Enter your captivating headline"
+                  value={formData.headline}
+                  onChange={handleInputChange}
+                  className="text-xl font-bold border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+                <Textarea
+                  name="body_text"
+                  placeholder="Craft your compelling ad copy"
+                  value={formData.body_text}
+                  onChange={handleInputChange}
+                  className="min-h-[120px] border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+                <Input
+                  name="call_to_action_text"
+                  placeholder="Enter a strong call-to-action"
+                  value={formData.call_to_action_text}
+                  onChange={handleInputChange}
+                  className="border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+                <Textarea
+                  name="additional_description"
+                  placeholder="Any additional details or context for your ad"
+                  value={formData.additional_description}
+                  onChange={handleInputChange}
+                  className="min-h-[100px] border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+                <Textarea
+                  name="instructional_prompt"
+                  placeholder="Ad Design Instructions (Mandatory)"
+                  value={formData.instructional_prompt}
+                  onChange={handleInputChange}
+                  className="min-h-[120px] border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all"
+                  required
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Number of Variations</label>
+                    <Select
+                      onValueChange={(value) => handleSelectChange("number_of_variations", value)}
+                      value={formData.number_of_variations.toString()}
+                    >
+                      <SelectTrigger className="w-full border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Variation</SelectItem>
+                        <SelectItem value="3">3 Variations</SelectItem>
+                        <SelectItem value="5">5 Variations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dimensions</label>
+                    <Select
+                      onValueChange={(value) => handleSelectChange("dimensions", value)}
+                      value={formData.dimensions}
+                    >
+                      <SelectTrigger className="w-full border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1080x1080">1080x1080 (Instagram)</SelectItem>
+                        <SelectItem value="1200x628">1200x628 (Facebook)</SelectItem>
+                        <SelectItem value="1024x512">1024x512 (Twitter)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <Button 
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-all duration-300 text-lg flex items-center justify-center"
                 >
-                  Generate Ad Creatives
+                  Generate Your Ad Creatives <FaArrowRight className="ml-2" />
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </div>
+        </Tabs>
+      </CardContent>
+      <EmailPromptDialog
+        isOpen={showEmailPrompt}
+        onClose={() => setShowEmailPrompt(false)}
+        onEmailSubmit={() => {
+          setShowEmailPrompt(false);
+          handleAdSubmission(formData, router, setShowEmailPrompt);
+        }}
+      />
+    </Card>
   );
 }

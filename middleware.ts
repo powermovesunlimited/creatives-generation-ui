@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   // Check if the request is for a protected route
-  const protectedRoutes = ['/ad-gallery', '/generate-ad', '/ad-results']
+  const protectedRoutes = ['/ad-gallery', '/ad-results']
   const isProtectedRoute = protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute && !session) {

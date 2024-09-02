@@ -1,9 +1,7 @@
-import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { Suspense } from "react";
-import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
   title: "Auto Creatives - AI Ad Generation",
@@ -26,9 +24,7 @@ export default function RootLayout({ children }: any) {
         <main className="flex flex-1 flex-col items-center py-16">
           {children}
         </main>
-        <Footer />
         <Toaster />
-        <Analytics />
       </body>
     </html>
   );

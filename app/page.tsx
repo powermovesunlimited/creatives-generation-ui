@@ -32,7 +32,7 @@ export default async function Index() {
             Boost your marketing with Auto Creatives. Our AI generates stunning ad images tailored to your brand or product, perfect for social media, display ads, and more.
           </p>
           <div className="flex flex-col space-y-4">
-            <Link href="/login">
+            <Link href="/generate-ad">
               <Button className="w-full lg:w-auto text-lg px-8 py-6 bg-primary hover:bg-primary/90 text-primary-foreground">
                 Generate Ad Creatives
               </Button>
