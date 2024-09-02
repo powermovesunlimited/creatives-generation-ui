@@ -46,9 +46,11 @@ type GeneratedData = {
 type AdGeneration = {
   id: string;
   created_at: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  request_data: string; // This is a JSON string
+  status: string;
+  queue_position?: number | null;
+  request_data: string;
   generated_data?: GeneratedData;
+  error_message?: string;
 };
 
 const gradients = [
@@ -97,6 +99,25 @@ const ShimmerEffect = () => (
   </motion.div>
 );
 
+const processingVariants = {
+  processing: {
+    opacity: [1, 0.7, 1],
+    scale: [1, 0.98, 1],
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      ease: "easeInOut",
+    },
+  },
+  default: {
+    opacity: 1,
+    scale: 1,
+  },
+};
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
 export default function AdGalleryClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -107,30 +128,63 @@ export default function AdGalleryClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const PAGE_SIZE = 9; // Number of items per page
+  const PAGE_SIZE = 6; // Number of items per page
 
-  const fetchAdGenerations = useCallback(async (pageNumber: number) => {
+  const fetchAdGenerations = useCallback(async (pageNumber: number, retryCount = 0) => {
     setError(null);
     setIsLoading(true);
     try {
       const { data, error, count } = await supabase
         .from('ad_generations')
-        .select('*', { count: 'exact' })
+        .select('id, created_at, status, queue_position, request_data, generated_data, error_message', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
 
       if (error) {
-        setError(error.message);
-      } else {
-        setAdGenerations(prevGenerations => 
-          pageNumber === 0 ? data as AdGeneration[] : [...prevGenerations, ...(data as AdGeneration[])]
-        );
-        setHasMore((count || 0) > (pageNumber + 1) * PAGE_SIZE);
+        console.error('Supabase query error:', error);
+        throw new Error(`Failed to fetch ad generations: ${error.message}`);
       }
+
+      if (!data) {
+        throw new Error('No data returned from Supabase');
+      }
+
+      setAdGenerations(prevGenerations => 
+        pageNumber === 0 ? data as AdGeneration[] : [...prevGenerations, ...(data as AdGeneration[])]
+      );
+      setHasMore((count || 0) > (pageNumber + 1) * PAGE_SIZE);
     } catch (err) {
-      setError('An unexpected error occurred');
+      console.error('Error in fetchAdGenerations:', err);
+      if (err instanceof Error && err.message.includes('Could not query the database for the schema cache') && retryCount < MAX_RETRIES) {
+        console.log(`Retrying fetchAdGenerations (Attempt ${retryCount + 1} of ${MAX_RETRIES})...`);
+        setTimeout(() => fetchAdGenerations(pageNumber, retryCount + 1), RETRY_DELAY);
+        return;
+      }
+      if (err instanceof Error) {
+        setError(`Failed to load ad generations: ${err.message}`);
+      } else {
+        setError('An unexpected error occurred while fetching ad generations');
+      }
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+    
+    switch (eventType) {
+      case 'INSERT':
+        setAdGenerations(prev => [newRecord as AdGeneration, ...prev]);
+        break;
+      case 'UPDATE':
+        setAdGenerations(prev => prev.map(gen => 
+          gen.id === newRecord.id ? { ...gen, ...newRecord } : gen
+        ));
+        break;
+      case 'DELETE':
+        setAdGenerations(prev => prev.filter(gen => gen.id !== oldRecord.id));
+        break;
     }
   }, []);
 
@@ -146,9 +200,7 @@ export default function AdGalleryClient() {
           schema: 'public', 
           table: 'ad_generations' 
         }, 
-        (payload) => {
-          fetchAdGenerations(0);
-        }
+        handleRealtimeUpdate
       )
       .subscribe();
 
@@ -156,7 +208,7 @@ export default function AdGalleryClient() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchAdGenerations, page]);
+  }, [fetchAdGenerations, page, handleRealtimeUpdate]);
 
   useEffect(() => {
     const recordId = searchParams.get('recordId');
@@ -183,14 +235,20 @@ export default function AdGalleryClient() {
         .eq('id', id);
 
       if (error) {
-        throw error;
+        console.error('Supabase delete error:', error);
+        throw new Error(`Failed to delete ad generation: ${error.message}`);
       }
 
       // Remove the deleted item from the state
       setAdGenerations(prevGenerations => prevGenerations.filter(gen => gen.id !== id));
       setIsDeleteDialogOpen(false);
     } catch (err) {
-      setError('Failed to delete the ad generation');
+      console.error('Error in handleDelete:', err);
+      if (err instanceof Error) {
+        setError(`Failed to delete ad generation: ${err.message}`);
+      } else {
+        setError('An unexpected error occurred while deleting the ad generation');
+      }
     }
   };
 
@@ -208,6 +266,9 @@ export default function AdGalleryClient() {
       <div className="container mx-auto p-4 text-center">
         <h1 className="text-2xl font-bold text-destructive mb-4">Error</h1>
         <p className="text-muted-foreground">{error}</p>
+        <Button onClick={() => fetchAdGenerations(0)} className="mt-4">
+          Retry
+        </Button>
       </div>
     );
   }
@@ -246,13 +307,18 @@ export default function AdGalleryClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
               {adGenerations.map((generation, index) => (
-                <GalleryItemCard
+                <motion.div
                   key={generation.id}
-                  generation={generation}
-                  gradient={gradients[index % gradients.length]}
-                  onRegenerate={handleRegenerate}
-                  onDelete={openDeleteDialog}
-                />
+                  variants={processingVariants}
+                  animate={generation.status === 'Processing' ? 'processing' : 'default'}
+                >
+                  <GalleryItemCard
+                    generation={generation}
+                    gradient={gradients[index % gradients.length]}
+                    onRegenerate={handleRegenerate}
+                    onDelete={openDeleteDialog}
+                  />
+                </motion.div>
               ))}
             </AnimatePresence>
           </div>
