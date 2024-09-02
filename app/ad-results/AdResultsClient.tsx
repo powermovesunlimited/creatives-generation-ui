@@ -5,13 +5,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaArrowLeft } from "react-icons/fa";
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-);
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Database } from "@/types/supabase";
 
 function LoadingSpinner() {
   return (
@@ -31,6 +26,7 @@ const debounce = (func: Function, wait: number) => {
 };
 
 export default function AdResultsClient() {
+  const supabase = createClientComponentClient<Database>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +35,25 @@ export default function AdResultsClient() {
   const [recordId, setRecordId] = useState<string | null>(null);
   const [requestParams, setRequestParams] = useState<Record<string, string> | null>(null);
   const isGeneratingRef = useRef(false);
+
+  const getCurrentUser = useCallback(async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error getting user:', error.message);
+        throw new Error('Failed to get user');
+      }
+      if (!user) {
+        console.error('No user found');
+        throw new Error('No user found');
+      }
+      return user;
+    } catch (err) {
+      console.error('Error in getCurrentUser:', err);
+      router.push('/login');
+      return null;
+    }
+  }, [supabase.auth, router]);
 
   const generateAd = useCallback(async (formData: Record<string, string>) => {
     if (isGeneratingRef.current) return;
@@ -54,12 +69,18 @@ export default function AdResultsClient() {
       if (!serverUrl) {
         throw new Error("SERVER_URL is not defined in the environment variables");
       }
+
+      const user = await getCurrentUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
       const response = await fetch(`${serverUrl}/generate_conversion_ad`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, user_id: user.id }),
       });
 
       if (response.ok) {
@@ -83,7 +104,7 @@ export default function AdResultsClient() {
     } finally {
       isGeneratingRef.current = false;
     }
-  }, [router]);
+  }, [router, getCurrentUser]);
 
   const debouncedGenerateAd = useCallback(debounce(generateAd, 300), [generateAd]);
 

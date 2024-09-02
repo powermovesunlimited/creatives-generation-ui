@@ -22,6 +22,9 @@ const nextConfig = {
     WEBHOOK_SIGNING_SECRET: process.env.WEBHOOK_SIGNING_SECRET,
     NEXT_PUBLIC_SERVER_URL: process.env.SERVER_URL,
   },
+  images: {
+    domains: ['creativegenstorage.blob.core.windows.net'],
+  },
 }
 
 module.exports = nextConfig

@@ -3,7 +3,6 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle, XCircle, ChevronRight, RefreshCw, Trash2 } from "lucide-react";
-import Image from 'next/image';
 import Link from 'next/link';
 
 type RequestData = {
@@ -19,8 +18,8 @@ type RequestData = {
 
 type GeneratedImage = {
   id: string;
+  url: string;
   type: string;
-  data: string;
 };
 
 type GeneratedData = {
@@ -32,7 +31,7 @@ type AdGeneration = {
   created_at: string;
   status: string;
   queue_position?: number | null;
-  request_data: string;
+  request_data: RequestData;
   generated_data?: GeneratedData;
   error_message?: string;
 };
@@ -58,7 +57,7 @@ interface GalleryItemCardProps {
 }
 
 const GalleryItemCard: React.FC<GalleryItemCardProps> = ({ generation, gradient, onRegenerate, onDelete }) => {
-  const requestData: RequestData = JSON.parse(generation.request_data);
+  const requestData: RequestData = generation.request_data;
   const firstImage = generation.generated_data?.generations[0];
 
   const getStatusColor = (status: string) => {
@@ -92,12 +91,10 @@ const GalleryItemCard: React.FC<GalleryItemCardProps> = ({ generation, gradient,
           </div>
           {generation.status === 'completed' && firstImage && (
             <div className="mb-4 relative aspect-video">
-              <Image
-                src={`data:${firstImage.type};base64,${firstImage.data}`}
+              <img
+                src={firstImage.url}
                 alt={requestData.headline || "Generated Ad Image"}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-lg"
+                className="w-full h-full object-cover rounded-lg"
               />
             </div>
           )}

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +37,7 @@ export default function AdGenerationView() {
       setError(null);
       try {
         const { data, error } = await supabase
-          .from('ad_generations')
+          .from('ad_generations_test')
           .select('*')
           .eq('id', id)
           .single();
@@ -59,7 +58,7 @@ export default function AdGenerationView() {
 
   const handleDownload = (adData) => {
     const link = document.createElement('a');
-    link.href = `data:${adData.type};base64,${adData.data}`;
+    link.href = adData.url;
     link.download = `ad_${adData.id}.png`;
     document.body.appendChild(link);
     link.click();
@@ -114,11 +113,9 @@ export default function AdGenerationView() {
               <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
                 <CardContent className="p-4">
                   <div className="relative group">
-                    <Image
-                      src={`data:${adData.type};base64,${adData.data}`}
+                    <img
+                      src={adData.url}
                       alt={`Generated ad ${adData.id}`}
-                      width={300}
-                      height={300}
                       className="rounded-md shadow-sm w-full h-auto"
                     />
                     <div className="absolute inset-0 bg-primary/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md">
@@ -161,12 +158,10 @@ export default function AdGenerationView() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
               >
-                <Image
-                  src={`data:${selectedImage.type};base64,${selectedImage.data}`}
+                <img
+                  src={selectedImage.url}
                   alt="Selected ad image"
-                  width={1080}
-                  height={1080}
-                  className="rounded-md shadow-md"
+                  className="rounded-md shadow-md w-full h-auto"
                 />
               </motion.div>
             </DialogContent>

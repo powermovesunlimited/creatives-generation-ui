@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Database } from "@/types/supabase";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from 'framer-motion';
 import GalleryItemCard from './GalleryItemCard';
@@ -15,11 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-);
 
 // Define the types based on the ConversionAdRequest model and updated Supabase structure
 type RequestData = {
@@ -35,8 +31,8 @@ type RequestData = {
 
 type GeneratedImage = {
   id: string;
+  url: string;
   type: string;
-  data: string;
 };
 
 type GeneratedData = {
@@ -51,6 +47,7 @@ type AdGeneration = {
   request_data: string;
   generated_data?: GeneratedData;
   error_message?: string;
+  user_id: string;
 };
 
 const gradients = [
@@ -119,6 +116,7 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 
 export default function AdGalleryClient() {
+  const supabase = createClientComponentClient<Database>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [adGenerations, setAdGenerations] = useState<AdGeneration[]>([]);
@@ -130,13 +128,38 @@ export default function AdGalleryClient() {
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 6; // Number of items per page
 
+  const getCurrentUser = useCallback(async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error getting user:', error.message);
+        throw new Error('Failed to get user');
+      }
+      if (!user) {
+        console.error('No user found');
+        throw new Error('No user found');
+      }
+      return user;
+    } catch (err) {
+      console.error('Error in getCurrentUser:', err);
+      router.push('/login');
+      return null;
+    }
+  }, [supabase.auth, router]);
+
   const fetchAdGenerations = useCallback(async (pageNumber: number, retryCount = 0) => {
     setError(null);
     setIsLoading(true);
     try {
+      const user = await getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error, count } = await supabase
-        .from('ad_generations')
-        .select('id, created_at, status, queue_position, request_data, generated_data, error_message', { count: 'exact' })
+        .from('ad_generations_test')
+        .select('id, created_at, status, queue_position, request_data, generated_data, error_message, user_id', { count: 'exact' })
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
 
@@ -149,8 +172,14 @@ export default function AdGalleryClient() {
         throw new Error('No data returned from Supabase');
       }
 
+      const processedData = data.map(item => ({
+        ...item,
+        request_data: typeof item.request_data === 'string' ? JSON.parse(item.request_data) : item.request_data,
+        generated_data: typeof item.generated_data === 'string' ? JSON.parse(item.generated_data) : item.generated_data
+      }));
+
       setAdGenerations(prevGenerations => 
-        pageNumber === 0 ? data as AdGeneration[] : [...prevGenerations, ...(data as AdGeneration[])]
+        pageNumber === 0 ? processedData as AdGeneration[] : [...prevGenerations, ...(processedData as AdGeneration[])]
       );
       setHasMore((count || 0) > (pageNumber + 1) * PAGE_SIZE);
     } catch (err) {
@@ -168,47 +197,68 @@ export default function AdGalleryClient() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [supabase, getCurrentUser]);
 
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     const { eventType, new: newRecord, old: oldRecord } = payload;
+    const user = await getCurrentUser();
     
-    switch (eventType) {
-      case 'INSERT':
-        setAdGenerations(prev => [newRecord as AdGeneration, ...prev]);
-        break;
-      case 'UPDATE':
-        setAdGenerations(prev => prev.map(gen => 
-          gen.id === newRecord.id ? { ...gen, ...newRecord } : gen
-        ));
-        break;
-      case 'DELETE':
-        setAdGenerations(prev => prev.filter(gen => gen.id !== oldRecord.id));
-        break;
+    if (user && newRecord.user_id === user.id) {
+      const processRecord = (record: any) => ({
+        ...record,
+        request_data: typeof record.request_data === 'string' ? JSON.parse(record.request_data) : record.request_data,
+        generated_data: typeof record.generated_data === 'string' ? JSON.parse(record.generated_data) : record.generated_data
+      });
+
+      switch (eventType) {
+        case 'INSERT':
+          setAdGenerations(prev => [processRecord(newRecord) as AdGeneration, ...prev]);
+          break;
+        case 'UPDATE':
+          setAdGenerations(prev => prev.map(gen => 
+            gen.id === newRecord.id ? processRecord(newRecord) as AdGeneration : gen
+          ));
+          break;
+        case 'DELETE':
+          setAdGenerations(prev => prev.filter(gen => gen.id !== oldRecord.id));
+          break;
+      }
     }
-  }, []);
+  }, [getCurrentUser]);
 
   useEffect(() => {
     fetchAdGenerations(page);
 
     // Set up real-time subscription
-    const channel = supabase
-      .channel('ad_generations_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'ad_generations' 
-        }, 
-        handleRealtimeUpdate
-      )
-      .subscribe();
+    const setupRealtimeSubscription = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        const channel = supabase
+          .channel('ad_generations_test_changes')
+          .on('postgres_changes', 
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'ad_generations_test',
+              filter: `user_id=eq.${user.id}`
+            }, 
+            handleRealtimeUpdate
+          )
+          .subscribe();
 
-    // Cleanup function
-    return () => {
-      supabase.removeChannel(channel);
+        // Cleanup function
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
     };
-  }, [fetchAdGenerations, page, handleRealtimeUpdate]);
+
+    const unsubscribe = setupRealtimeSubscription();
+
+    return () => {
+      unsubscribe.then(unsub => unsub && unsub());
+    };
+  }, [fetchAdGenerations, page, handleRealtimeUpdate, supabase, getCurrentUser]);
 
   useEffect(() => {
     const recordId = searchParams.get('recordId');
@@ -230,7 +280,7 @@ export default function AdGalleryClient() {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('ad_generations')
+        .from('ad_generations_test')
         .delete()
         .eq('id', id);
 
