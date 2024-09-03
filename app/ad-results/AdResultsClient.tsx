@@ -34,7 +34,7 @@ export default function AdResultsClient() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
-  const [requestParams, setRequestParams] = useState<Record<string, string> | null>(null);
+  const [requestParams, setRequestParams] = useState<Record<string, any> | null>(null);
   const isGeneratingRef = useRef(false);
 
   const getCurrentUser = useCallback(async () => {
@@ -83,7 +83,7 @@ export default function AdResultsClient() {
     }
   }, [supabase]);
 
-  const generateAd = useCallback(async (formData: Record<string, string>) => {
+  const generateAd = useCallback(async (formData: Record<string, any>) => {
     if (isGeneratingRef.current) return;
     isGeneratingRef.current = true;
 
@@ -92,6 +92,18 @@ export default function AdResultsClient() {
 
     try {
       console.log("Generating ad with Form data:", formData);
+      
+      // Check for required fields
+      const requiredFields = ['headline', 'body_text', 'call_to_action_text', 'instructional_prompt', 'number_of_variations'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+      }
+
+      // Ensure number_of_variations is a number
+      formData.number_of_variations = Number(formData.number_of_variations);
+
       const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
       console.log("Server URL:", serverUrl);
       if (!serverUrl) {
@@ -149,7 +161,8 @@ export default function AdResultsClient() {
           setIsLoading(false);
         }
       } else {
-        setError("Failed to generate ad");
+        const errorData = await response.json();
+        setError("Failed to generate ad: " + JSON.stringify(errorData));
         setIsLoading(false);
       }
     } catch (error) {
@@ -172,9 +185,21 @@ export default function AdResultsClient() {
   const debouncedGenerateAd = useCallback(debounce(generateAd, 300), [generateAd]);
 
   useEffect(() => {
-    const formData = Object.fromEntries(searchParams.entries());
-    setRequestParams(formData);
-    debouncedGenerateAd(formData);
+    const encodedData = searchParams.get('data');
+    if (encodedData) {
+      try {
+        const decodedData = JSON.parse(decodeURIComponent(encodedData));
+        setRequestParams(decodedData);
+        debouncedGenerateAd(decodedData);
+      } catch (error) {
+        console.error('Error parsing form data:', error);
+        setError('Invalid form data. Please try again.');
+        setIsLoading(false);
+      }
+    } else {
+      setError('No form data found. Please fill out the form and try again.');
+      setIsLoading(false);
+    }
   }, [searchParams, debouncedGenerateAd]);
 
   if (isLoading) {
@@ -189,6 +214,21 @@ export default function AdResultsClient() {
       </div>
     );
   }
+
+  const renderValue = (value: any): React.ReactNode => {
+    if (typeof value === 'object' && value !== null) {
+      return (
+        <ul>
+          {Object.entries(value).map(([subKey, subValue]) => (
+            <li key={subKey}>
+              <strong>{subKey}:</strong> {renderValue(subValue)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return String(value);
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 bg-background min-h-screen">
@@ -207,9 +247,9 @@ export default function AdResultsClient() {
       <div className="border border-muted rounded-lg p-4 shadow-sm bg-card">
         <h2 className="text-xl font-semibold mb-3 text-primary">Request Parameters</h2>
         {requestParams && Object.entries(requestParams).map(([key, value]) => (
-          <p key={key} className="mb-2">
-            <strong>{key}:</strong> {value}
-          </p>
+          <div key={key} className="mb-2">
+            <strong>{key}:</strong> {renderValue(value)}
+          </div>
         ))}
         <Link href="/ad-gallery">
           <Button className="mt-4">

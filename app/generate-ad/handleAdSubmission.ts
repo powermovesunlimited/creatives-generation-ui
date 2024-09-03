@@ -104,8 +104,7 @@ export const handleAdSubmission = async (
 };
 
 const proceedToAdGeneration = (formData: RequestData, router: AppRouterInstance) => {
-  const queryString = new URLSearchParams(
-    Object.entries(formData).map(([key, value]) => [key, value.toString()])
-  ).toString();
-  router.push(`/ad-results?${queryString}`);
+  // Encode the entire formData object as a JSON string
+  const encodedData = encodeURIComponent(JSON.stringify(formData));
+  router.push(`/ad-results?data=${encodedData}`);
 };

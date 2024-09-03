@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FaMagic, FaRobot, FaPencilAlt, FaImage, FaArrowRight } from 'react-icons/fa';
+import { FaMagic, FaRobot, FaPencilAlt, FaArrowRight } from 'react-icons/fa';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,14 +90,40 @@ export default function GenerateAdClient() {
       alert("Ad Design Instructions are mandatory. Please provide instructions for the ad design.");
       return;
     }
+    console.log("Submitting form data:", formData);
     await handleAdSubmission(formData, router, setShowEmailPrompt);
+  };
+
+  const handleUseWizard = () => {
+    router.push('/ad_wizard');
   };
 
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-lg overflow-hidden">
       <CardContent className="p-0">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
+          <h2 className="text-3xl font-bold mb-4">AI-Powered Ad Creator</h2>
+          <p className="mb-6">Create stunning ads with the power of AI or use our step-by-step wizard for a guided experience.</p>
+          <Button 
+            onClick={handleUseWizard}
+            className="w-full bg-white text-purple-600 hover:bg-gray-100 font-bold py-3 rounded-lg transition-all duration-300 flex items-center justify-center text-lg"
+          >
+            Use Ad Wizard <FaMagic className="ml-2" />
+          </Button>
+          <div className="mt-4 text-sm">
+            <h3 className="font-semibold mb-2">How our AI Wizard improves your ad creation:</h3>
+            <ul className="list-disc list-inside">
+              <li>Analyzes your website to understand your business</li>
+              <li>Generates tailored ad content suggestions</li>
+              <li>Recommends effective call-to-action phrases</li>
+              <li>Suggests visual styles that match your brand</li>
+              <li>Guides you through each step of the process</li>
+            </ul>
+          </div>
+        </div>
+
         <Tabs defaultValue="ai" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-t-lg">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-100">
             <TabsTrigger value="ai" className="py-4 text-lg font-semibold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-blue-600">
               <FaRobot className="mr-2 inline" /> AI-Assisted
             </TabsTrigger>
@@ -107,8 +133,6 @@ export default function GenerateAdClient() {
           </TabsList>
 
           <div className="p-6 bg-white">
-            <h2 className="text-3xl font-bold mb-6 text-gray-800">AI-Powered Ad Creator</h2>
-
             <TabsContent value="ai">
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Select Business Type</label>
