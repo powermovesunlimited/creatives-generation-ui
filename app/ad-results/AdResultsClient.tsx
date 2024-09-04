@@ -28,7 +28,7 @@ const debounce = (func: Function, wait: number) => {
 
 function getServerUrl(): string {
   if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_SERVER_URL || '';
+    return process.env.NEXT_PUBLIC_SERVER_URL || 'https://creatives-generation-app.azurewebsites.net';
   } else {
     return 'http://localhost:8000';
   }
