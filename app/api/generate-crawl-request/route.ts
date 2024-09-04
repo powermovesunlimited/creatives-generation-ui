@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     console.log('Calling OpenAI API...');
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: "You are an expert in web scraping and data extraction, specializing in creating targeted extraction strategies for business information." },
           { role: "user", content: `Create a highly focused extraction strategy for the following URL: ${url}. The goal is to extract specific business information:

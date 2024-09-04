@@ -26,6 +26,14 @@ const debounce = (func: Function, wait: number) => {
   };
 };
 
+function getServerUrl(): string {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.NEXT_PUBLIC_SERVER_URL || '';
+  } else {
+    return 'http://localhost:8000';
+  }
+}
+
 export default function AdResultsClient() {
   const supabase = createClientComponentClient<Database>();
   const searchParams = useSearchParams();
@@ -92,11 +100,11 @@ export default function AdResultsClient() {
 
     try {
       console.log("Generating ad with Form data:", formData);
-      
+
       // Check for required fields
-      const requiredFields = ['headline', 'body_text', 'call_to_action_text', 'instructional_prompt', 'number_of_variations'];
+      const requiredFields = ['headline', 'body_text', 'call_to_action_text', 'instructional_prompt', 'number_of_variations', 'dimensions'];
       const missingFields = requiredFields.filter(field => !formData[field]);
-      
+
       if (missingFields.length > 0) {
         throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
@@ -104,7 +112,7 @@ export default function AdResultsClient() {
       // Ensure number_of_variations is a number
       formData.number_of_variations = Number(formData.number_of_variations);
 
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+      const serverUrl = getServerUrl();
       console.log("Server URL:", serverUrl);
       if (!serverUrl) {
         throw new Error("SERVER_URL is not defined in the environment variables");
@@ -120,7 +128,7 @@ export default function AdResultsClient() {
 
       // Check if this transaction has already been processed
       const { data: existingTransaction } = await supabase
-        .from('ad_transactions')
+        .from('ad_transactions_test')
         .select('id')
         .eq('transaction_id', transactionId)
         .single();
@@ -133,7 +141,7 @@ export default function AdResultsClient() {
 
       // Deduct a credit before generating the ad
       await deductCredit(user.id);
-
+      console.log('Posting form data to server:', formData);
       const response = await fetch(`${serverUrl}/generate_conversion_ad`, {
         method: "POST",
         headers: {
@@ -146,7 +154,7 @@ export default function AdResultsClient() {
         const result = await response.json();
         if (result.status === "success") {
           // Record the transaction
-          await supabase.from('ad_transactions').insert({
+          await supabase.from('ad_transactions_test').insert({
             user_id: user.id,
             transaction_id: transactionId,
             ad_id: result.data.record_id

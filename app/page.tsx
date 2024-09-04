@@ -75,9 +75,6 @@ export default async function Index() {
       <div className="w-full bg-accent text-accent-foreground py-16">
         <ExplainerSection />
       </div>
-      <div className="w-full bg-background text-foreground py-16">
-        <PricingSection />
-      </div>
     </div>
   );
 }

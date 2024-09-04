@@ -32,11 +32,19 @@ const StripePricingTable = ({ user }: Props) => {
     }
   }, []);
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const pricingTableId = isProduction
+    ? process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE
+    : process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST;
+  const publishableKey = isProduction
+    ? process.env.STRIPE_PUBLISHABLE_KEY
+    : process.env.STRIPE_PUBLISHABLE_TEST_KEY;
+
   return (
     <div className='flex flex-1 flex-col w-full'>
       <stripe-pricing-table
-          pricing-table-id="prctbl_1P0TL0C3ic5Sd20TGpWOU2Fi"
-          publishable-key="pk_live_51P0SikC3ic5Sd20T9QRaRKIkqy8l951LDgeOxcP24ZRXHnQzjnOFM7tfhsYdWksn1wNBdejJzvaxXGq0yRAxm14A00Py0XreGk"
+          pricing-table-id={pricingTableId || ''}
+          publishable-key={publishableKey || ''}
           client-reference-id={user.id}
           customer-email={user.email}
       >

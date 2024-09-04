@@ -21,7 +21,7 @@ import {
 type RequestData = {
   headline: string;
   body_text: string;
-  additional_description?: string;
+  additional_description?: string | null;
   image?: string;
   number_of_variations: number;
   call_to_action_text: string;
@@ -272,7 +272,7 @@ export default function AdGalleryClient() {
 
   const handleRegenerate = (requestData: RequestData) => {
     const queryString = new URLSearchParams(
-      Object.entries(requestData).map(([key, value]) => [key, value.toString()])
+      Object.entries(requestData).map(([key, value]) => [key, String(value ?? '')])
     ).toString();
     router.push(`/generate-ad?${queryString}`);
   };

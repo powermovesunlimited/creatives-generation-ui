@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaMagic, FaRocket, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { FaMagic, FaRocket, FaCheckCircle, FaExclamationTriangle, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RelevantImage {
   src: string;
@@ -50,11 +50,45 @@ export default function WelcomeScreen({ adData, updateAdData, onNext }: WelcomeS
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
   const [partialResults, setPartialResults] = useState<Partial<ScrapedData>>({});
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [neverPlayAgain, setNeverPlayAgain] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const neverPlay = localStorage.getItem('neverPlayAudio');
+    if (neverPlay === 'true') {
+      setNeverPlayAgain(true);
+    }
+  }, []);
 
   const updateProgress = (newProgress: number, message: string) => {
     setProgress(newProgress);
     setStatusMessage(message);
     console.log(`Progress: ${newProgress}%, Message: ${message}`);
+  };
+
+  const playAudio = () => {
+    if (audioRef.current && !neverPlayAgain) {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleNeverPlayAgain = () => {
+    setNeverPlayAgain(!neverPlayAgain);
+    localStorage.setItem('neverPlayAudio', (!neverPlayAgain).toString());
+    if (!neverPlayAgain) {
+      stopAudio();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,7 +97,9 @@ export default function WelcomeScreen({ adData, updateAdData, onNext }: WelcomeS
     setError(null);
     setProgress(0);
     setPartialResults({});
+    setFormSubmitted(true);
     updateProgress(0, 'Initializing scraping process...');
+    playAudio();
 
     try {
       // Step 1: Generate extraction strategy
@@ -197,6 +233,75 @@ export default function WelcomeScreen({ adData, updateAdData, onNext }: WelcomeS
               </Button>
             </motion.div>
           </form>
+
+          {/* Audio controls */}
+          {formSubmitted && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="mt-4 flex items-center justify-center space-x-4"
+            >
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={isPlaying ? stopAudio : playAudio}
+                      disabled={neverPlayAgain}
+                      className={`p-2 rounded-full ${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`}
+                    >
+                      {isPlaying ? <FaVolumeMute /> : <FaVolumeUp />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isPlaying ? "Stop Music" : "Play Music"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={neverPlayAgain}
+                  onChange={toggleNeverPlayAgain}
+                  className="form-checkbox h-5 w-5 text-indigo-600"
+                />
+                <span className="text-sm text-gray-700">Never play again</span>
+              </label>
+            </motion.div>
+          )}
+
+          {/* Subtle animation for music playing */}
+          {isPlaying && (
+            <motion.div
+              className="mt-4 flex justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.div
+                className="w-2 h-8 bg-indigo-500 mx-1 rounded-full"
+                animate={{ height: [8, 20, 8] }}
+                transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
+              />
+              <motion.div
+                className="w-2 h-8 bg-indigo-500 mx-1 rounded-full"
+                animate={{ height: [12, 24, 12] }}
+                transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", delay: 0.1 }}
+              />
+              <motion.div
+                className="w-2 h-8 bg-indigo-500 mx-1 rounded-full"
+                animate={{ height: [16, 28, 16] }}
+                transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", delay: 0.2 }}
+              />
+            </motion.div>
+          )}
+
+          {/* Audio element */}
+          <audio ref={audioRef} loop>
+            <source src="/SHADOW-WIZARD-MONEY-GANG.mp3" type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+
           <AnimatePresence>
             {error && (
               <motion.p

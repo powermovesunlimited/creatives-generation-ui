@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { handleAdSubmission, RequestData } from "./handleAdSubmission";
 import { EmailPromptDialog } from "@/components/EmailPromptDialog";
 import { generateAIContent } from "./generateAIContent";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { toast } from "@/components/ui/use-toast";
 
 const businessTypes = [
   "Restaurant", "Real Estate", "Fitness", "E-commerce", "Technology",
@@ -37,6 +39,7 @@ export default function GenerateAdClient() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const paramsData: Partial<RequestData> = {};
@@ -87,11 +90,54 @@ export default function GenerateAdClient() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.instructional_prompt) {
-      alert("Ad Design Instructions are mandatory. Please provide instructions for the ad design.");
+      toast({
+        title: "Error",
+        description: "Ad Design Instructions are mandatory. Please provide instructions for the ad design.",
+        variant: "destructive",
+      });
       return;
     }
     console.log("Submitting form data:", formData);
     await handleAdSubmission(formData, router, setShowEmailPrompt);
+  };
+
+  const handleEmailConfirmation = async (confirmed: boolean) => {
+    setShowEmailPrompt(false);
+    if (confirmed) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && user.email_confirmed_at) {
+        if (user.email?.includes('@anonymous.com')) {
+          // Add credits only for anonymous users
+          const { error } = await supabase
+            .from('credits')
+            .upsert({ user_id: user.id, credits: 5 }, { onConflict: 'user_id' });
+
+          if (error) {
+            console.error("Error adding credits:", error);
+            toast({
+              title: "Error",
+              description: "Unable to add credits to your account. Please try again later.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          toast({
+            title: "Credits Added",
+            description: "5 credits have been added to your account!",
+          });
+        }
+
+        // Proceed with ad submission
+        await handleAdSubmission(formData, router, setShowEmailPrompt);
+      } else {
+        toast({
+          title: "Email Not Confirmed",
+          description: "Please check your email and confirm your new address before proceeding.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleUseWizard = () => {
@@ -256,10 +302,7 @@ export default function GenerateAdClient() {
       <EmailPromptDialog
         isOpen={showEmailPrompt}
         onClose={() => setShowEmailPrompt(false)}
-        onEmailSubmit={() => {
-          setShowEmailPrompt(false);
-          handleAdSubmission(formData, router, setShowEmailPrompt);
-        }}
+        onEmailSubmit={handleEmailConfirmation}
       />
     </Card>
   );
