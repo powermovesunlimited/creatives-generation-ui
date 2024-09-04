@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPalette, FaUpload, FaSync, FaCheck } from 'react-icons/fa';
+import { FaPalette, FaUpload, FaSync, FaCheck, FaTimes } from 'react-icons/fa';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -15,11 +15,17 @@ interface BusinessInfo {
   key_products_or_services: string[];
 }
 
+interface RelevantImage {
+  id: string;
+  src: string;
+  alt: string;
+}
+
 interface VisualStyleSelectorProps {
   adData: {
     businessInfo: BusinessInfo | null;
     visualTheme: string;
-    customImage: File | null;
+    referenceImage?: RelevantImage | File;
   };
   updateAdData: (newData: Partial<typeof adData>) => void;
   onNext: () => void;
@@ -67,8 +73,12 @@ export default function VisualStyleSelector({ adData, updateAdData, onNext, onPr
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      updateAdData({ customImage: e.target.files[0] });
+      updateAdData({ referenceImage: e.target.files[0] });
     }
+  };
+
+  const handleRemoveReferenceImage = () => {
+    updateAdData({ referenceImage: undefined });
   };
 
   return (
@@ -149,32 +159,39 @@ export default function VisualStyleSelector({ adData, updateAdData, onNext, onPr
           )}
 
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4">Custom Image Upload (Optional)</h3>
-            <div className="flex items-center space-x-4">
-              <Input
-                type="file"
-                onChange={handleImageUpload}
-                accept="image/*"
-                className="hidden"
-                id="image-upload"
-              />
-              <Label htmlFor="image-upload" className="cursor-pointer">
-                <div className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md hover:from-purple-600 hover:to-indigo-600 transition-all duration-200">
-                  <FaUpload />
-                  <span>{adData.customImage ? 'Change Image' : 'Upload Image'}</span>
+            <h3 className="text-xl font-semibold mb-4">Design Reference Image</h3>
+            {adData.referenceImage ? (
+              <div className="flex items-center space-x-4">
+                {adData.referenceImage instanceof File ? (
+                  <img src={URL.createObjectURL(adData.referenceImage)} alt="Uploaded reference" className="w-32 h-32 object-cover rounded-lg" />
+                ) : (
+                  <img src={adData.referenceImage.src} alt={adData.referenceImage.alt} className="w-32 h-32 object-cover rounded-lg" />
+                )}
+                <div>
+                  <p className="font-semibold">Selected Reference Image</p>
+                  <Button onClick={handleRemoveReferenceImage} variant="destructive" size="sm" className="mt-2">
+                    <FaTimes className="mr-2" />
+                    Remove
+                  </Button>
                 </div>
-              </Label>
-              {adData.customImage && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center space-x-2 text-sm text-gray-600"
-                >
-                  <FaCheck className="text-green-500" />
-                  <span>{adData.customImage.name}</span>
-                </motion.div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Input
+                  type="file"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md hover:from-purple-600 hover:to-indigo-600 transition-all duration-200">
+                    <FaUpload />
+                    <span>Upload Reference Image</span>
+                  </div>
+                </Label>
+              </div>
+            )}
           </div>
 
           <motion.div

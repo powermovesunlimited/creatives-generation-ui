@@ -103,7 +103,7 @@ Provide a strategy that will result in clean, relevant data for these specific f
         
         // Ensure the provider is always set to "openai/gpt-4o-mini"
         if (generatedStrategy.extraction_strategy === "LLMExtractionStrategy") {
-          generatedStrategy.extraction_strategy_args.provider = "openai/gpt-4o";
+          generatedStrategy.extraction_strategy_args.provider = "openai/gpt-4o-mini";
         }
 
         console.log('Generated strategy:', generatedStrategy);

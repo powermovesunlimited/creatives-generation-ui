@@ -14,10 +14,16 @@ export async function POST(req: Request) {
       Description: ${businessInfo.description}
       Key Products/Services: ${businessInfo.key_products_or_services.join(', ')}
 
-      Generate 6 visual ad design approach suggestions that would be suitable for this business's advertisements. 
+      Generate 6 visual ad design prompt suggestions that would be suitable for this business's advertisements that can be
+      given to an image generation ai to create the ad image. 
       They should be a creative description of how the ad should look including colors, fonts, imagery, people, and other elements.
-      The visual styles approaches should be diverse and tailored to the specific business and its offerings.
+      The visual prompt approaches should be diverse and tailored to the specific business and its offerings.
       Consider the industry, target audience, and brand personality when suggesting these styles.
+
+      The following is an example of correct response:
+
+      Sleek designer high heel shoe, vibrant red patent leather, placed on a mirrored surface. Soft studio lighting creating subtle reflections. Minimalist white background. Sharp focus on the shoe's curves and textures. Cinematic composition with the shoe angled slightly to showcase its profile. Small water droplets on the shoe's surface for added glamour. Text overlay in an elegant sans-serif font: 'Step into Luxury
+
     `;
 
     const completion = await openai.chat.completions.create({
@@ -33,10 +39,10 @@ export async function POST(req: Request) {
           parameters: {
             type: "object",
             properties: {
-              visualThemes: { 
+              visualThemes: {
                 type: "array",
                 items: { type: "string" },
-                description: "List of 6 suggested visual styles or themes"
+                description: "List of 6 suggested visual ad design style prompt suggestions"
               }
             },
             required: ["visualThemes"]

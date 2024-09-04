@@ -24,7 +24,7 @@ import {
 
 const stripeIsConfigured = process.env.NEXT_PUBLIC_STRIPE_IS_ENABLED === "true";
 
-export default function Navbar() {
+export default function Navbar({ authState }: { authState: 'authenticated' | 'unauthenticated' | 'loading' }) {
   const supabase = createClientComponentClient<Database>();
   const [user, setUser] = useState<Database['public']['Tables']['users']['Row'] | null>(null);
   const [credits, setCredits] = useState<Database['public']['Tables']['credits']['Row'] | null>(null);
@@ -32,44 +32,26 @@ export default function Navbar() {
 
   useEffect(() => {
     const fetchUserAndCredits = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      if (authState === 'authenticated') {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
 
-      if (user) {
-        const { data: creditsData } = await supabase
-          .from("credits")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
-        setCredits(creditsData);
-      }
-    };
-
-    fetchUserAndCredits();
-
-    const handleAuthChange = (event: Event) => {
-      if ((event as CustomEvent).detail?.event === 'SIGNED_IN') {
-        fetchUserAndCredits();
-      } else if ((event as CustomEvent).detail?.event === 'SIGNED_OUT') {
+        if (user) {
+          const { data: creditsData } = await supabase
+            .from("credits")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+          setCredits(creditsData);
+        }
+      } else {
         setUser(null);
         setCredits(null);
       }
     };
 
-    window.addEventListener('auth-state-changed', handleAuthChange);
-
-    // Add a listener for custom 'anonymous-user-created' event
-    const handleAnonymousUserCreated = () => {
-      fetchUserAndCredits();
-    };
-
-    window.addEventListener('anonymous-user-created', handleAnonymousUserCreated);
-
-    return () => {
-      window.removeEventListener('auth-state-changed', handleAuthChange);
-      window.removeEventListener('anonymous-user-created', handleAnonymousUserCreated);
-    };
-  }, [supabase]);
+    fetchUserAndCredits();
+  }, [authState, supabase]);
 
   const navItems = [
     { href: "/generate-ad", label: "Generate Ads" },
@@ -96,7 +78,7 @@ export default function Navbar() {
   return (
     <div className="flex w-full px-4 lg:px-40 py-4 items-center border-b text-center gap-8 justify-between">
       <div className="flex items-center gap-2">
-        {user && (
+        {authState === 'authenticated' && (
           <div className="lg:hidden">
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
               <SheetTrigger asChild>
@@ -116,18 +98,18 @@ export default function Navbar() {
           <h2 className="font-bold">Auto Creatives</h2>
         </Link>
       </div>
-      {user && (
+      {authState === 'authenticated' && (
         <div className="hidden lg:flex flex-row gap-2">
           <NavLinks />
         </div>
       )}
       <div className="flex gap-4 lg:ml-auto">
-        {!user && (
+        {authState === 'unauthenticated' && (
           <Link href="/login">
             <Button variant="ghost">Login / Signup</Button>
           </Link>
         )}
-        {user && (
+        {authState === 'authenticated' && user && (
           <div className="flex flex-row gap-4 text-center align-middle justify-center">
             {stripeIsConfigured && (
               <ClientSideCredits creditsRow={credits} />

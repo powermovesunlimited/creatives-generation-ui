@@ -6,11 +6,17 @@ export async function POST(req: Request) {
     const { url } = body;
 
     if (!url) {
+      console.error('Missing URL in request');
       return NextResponse.json({ error: 'Missing URL' }, { status: 400 });
     }
 
     console.log('Generating extraction strategy for URL:', url);
-    const extractionStrategyResponse = await fetch(new URL('/api/generate-crawl-request', req.url), {
+    
+    // Get the host from the incoming request
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    
+    const extractionStrategyResponse = await fetch(`${protocol}://${host}/api/generate-crawl-request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })

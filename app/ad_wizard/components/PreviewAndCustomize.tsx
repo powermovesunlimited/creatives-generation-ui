@@ -6,13 +6,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+interface RelevantImage {
+  id: string;
+  src: string;
+  alt: 
+  string;
+}
+
+
 interface PreviewAndCustomizeProps {
   adData: {
     headline: string;
     adCopy: string;
-    callToAction: string;
+    call_to_action_text: string;
     visualTheme: string;
-    customImage: File | null;
+    referenceImage?: RelevantImage | File;
   };
   updateAdData: (newData: Partial<typeof adData>) => void;
   onNext: () => void;
@@ -64,8 +72,8 @@ export default function PreviewAndCustomize({ adData, updateAdData, onNext, onPr
               </label>
               <Input
                 id="callToAction"
-                value={adData.callToAction}
-                onChange={(e) => updateAdData({ callToAction: e.target.value })}
+                value={adData.call_to_action_text}
+                onChange={(e) => updateAdData({ call_to_action_text: e.target.value })}
               />
             </div>
           </div>
@@ -78,7 +86,7 @@ export default function PreviewAndCustomize({ adData, updateAdData, onNext, onPr
             <div className="space-y-2">
               <p className="font-bold">{adData.headline}</p>
               <p>{adData.adCopy}</p>
-              <p className="font-semibold text-primary">{adData.callToAction}</p>
+              <p className="font-semibold text-primary">{adData.call_to_action_text}</p>
               <p className="text-sm text-muted-foreground">Visual Theme: {adData.visualTheme}</p>
               {adData.customImage && (
                 <p className="text-sm text-muted-foreground">Custom Image: {adData.customImage.name}</p>

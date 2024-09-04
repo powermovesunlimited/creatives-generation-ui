@@ -124,6 +124,7 @@ export default function WelcomeScreen({ adData, updateAdData, onNext }: WelcomeS
       const crawlData = await crawlResponse.json();
       if (crawlData.error) throw new Error(crawlData.error);
       const { markdownContent, images } = crawlData;
+      console.log('Crawled images:', images);
       setPartialResults(prev => ({ ...prev, crawledContent: 'Obtained', imageCount: images.length }));
 
       // Step 3: Interpret data

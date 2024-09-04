@@ -20,7 +20,7 @@ async function interpretScrapedData(scrapedData: any): Promise<any> {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: "You are an AI assistant tasked with interpreting scraped website data and extracting structured business information." },
         { role: "user", content: prompt }

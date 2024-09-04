@@ -12,7 +12,10 @@ async function determineImageRelevance(images: any[], businessContext: string, r
     const validImages = images.filter(image => isValidImageUrl(image.src));
     console.log(`Filtered ${images.length - validImages.length} invalid images`);
 
-    const response = await fetch(new URL('/api/determine-image-relevance', req.url), {
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+
+    const response = await fetch(`${protocol}://${host}/api/determine-image-relevance`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ images: validImages, businessContext })

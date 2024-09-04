@@ -17,13 +17,13 @@ interface BusinessInfo {
 }
 
 interface RelevantImage {
-  id: string;
+  id: string; // Add this line
   src: string;
   alt: string;
-  relevanceAnalysis: {
-    isRelevant: boolean;
-    relevanceScore: number;
-    explanation: string;
+  relevanceAnalysis?: {
+    isRelevant?: boolean;
+    relevanceScore?: number;
+    explanation?: string;
     suggestedUse?: string;
   };
 }
@@ -34,6 +34,8 @@ interface AdData {
   headline: string;
   adCopy: string;
   relevantImages?: RelevantImage[];
+  referenceImage?: RelevantImage | File | null;
+  logoImage?: RelevantImage | File | null;
 }
 
 interface RedesignedAdWizardProps {
@@ -91,22 +93,43 @@ const RedesignedAdWizard: React.FC<RedesignedAdWizardProps> = ({
     generateSuggestions();
   }, [adData.businessInfo]);
 
-  const handleRemoveImage = (id: string) => {
-    if (adData.relevantImages) {
-      const updatedImages = adData.relevantImages.filter(img => img.id !== id);
-      updateAdData({ relevantImages: updatedImages });
-    }
+  const handleImageSelection = (type: 'logo' | 'reference', image: RelevantImage | null) => {
+    updateAdData({
+      [type === 'logo' ? 'logoImage' : 'referenceImage']: image,
+    });
+  };
+
+  const handleImageRemoval = (id: string) => {
+    updateAdData({
+      relevantImages: adData.relevantImages?.filter(img => img.id !== id),
+      logoImage: adData.logoImage && 'id' in adData.logoImage && adData.logoImage.id === id ? null : adData.logoImage,
+      referenceImage: adData.referenceImage && 'id' in adData.referenceImage && adData.referenceImage.id === id ? null : adData.referenceImage,
+    });
   };
 
   return (
     <Card className="w-full bg-white overflow-hidden">
       <CardContent className="p-8">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-purple-600 to-indigo-600 text-transparent bg-clip-text"
+        >
+          Ad Wizard
+        </motion.h1>
 
         <DynamicRevealSection title="Business Profile" data={adData.businessInfo} />
         
         <ProductsServicesCarousel items={adData.businessInfo?.key_products_or_services} />
         
-        <EnhancedImageGallery images={adData.relevantImages} onRemove={handleRemoveImage} />
+        <EnhancedImageGallery 
+          images={adData.relevantImages}
+          onLogoSelect={(image) => handleImageSelection('logo', image)}
+          onReferenceSelect={(image) => handleImageSelection('reference', image)}
+          onRemove={handleImageRemoval}
+          selectedLogo={adData.logoImage}
+          selectedReference={adData.referenceImage}
+        />
         
         <SuggestedOptionsSection
           options={suggestedOptions}

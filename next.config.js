@@ -1,3 +1,5 @@
+const { ST } = require('next/dist/shared/lib/utils')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -13,7 +15,6 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE: process.env.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE,
     NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE: process.env.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE,
@@ -26,6 +27,9 @@ const nextConfig = {
     NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST: process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST,
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
     STRIPE_PUBLISHABLE_TEST_KEY: process.env.STRIPE_PUBLISHABLE_TEST_KEY,
+    AZURE_STORAGE_CONTAINER_NAME: process.env.AZURE_STORAGE_CONTAINER_NAME,
+
+    
   },
   images: {
     domains: ['creativegenstorage.blob.core.windows.net'],

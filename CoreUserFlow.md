@@ -54,11 +54,13 @@ This document explains the updated flow of the application from the point that a
      - Uses GPT-4 to create context-aware and effective call-to-action phrases.
   4. Visual Style Selection: 
      - Provides AI-suggested visual themes based on the business type and information.
-     - Allows users to choose a visual theme and optionally upload custom images.
-  5. Preview and Customize: Shows a real-time preview of the ad and allows for final adjustments.
+     - Allows users to choose a visual theme.
+     - Users can now upload a custom image for their ad.
+     - The custom image is stored temporarily and will be used in the ad generation process.
+  5. Preview and Customize: Shows a real-time preview of the ad (including the custom image if uploaded) and allows for final adjustments.
   6. Final Review: Displays the complete ad for review before submission.
 - The wizard leverages AI throughout the process to provide personalized suggestions and streamline the ad creation process.
-- Upon completion, the ad is submitted using the same process as the standard form.
+- Upon completion, the ad is submitted using the same process as the standard form, including the custom image if one was uploaded.
 
 ## 4. Email Prompt Dialog (components/EmailPromptDialog.tsx)
 
@@ -78,6 +80,7 @@ This document explains the updated flow of the application from the point that a
   - Generates a unique transaction ID to prevent duplicate requests.
   - Deducts one credit from the user's account.
 - The page makes an API call to the server to generate the ad using the provided form data.
+- If a custom image was uploaded, it's included in the ad generation request.
 - If the ad generation is successful:
   - The transaction is recorded in the ad_transactions table.
   - The page receives a record ID for the generated ad.
@@ -93,6 +96,7 @@ This document explains the updated flow of the application from the point that a
 - It uses the record ID from the query parameter to highlight the newly generated ad.
 - Users can view all their previously generated ads in this gallery.
 - Each ad in the gallery is displayed with its details and a preview image.
+- If a custom image was used in the ad generation, it will be displayed as part of the ad in the gallery.
 
 ## 7. Get Credits Page (app/get-credits/page.tsx)
 
@@ -108,6 +112,8 @@ This document explains the updated flow of the application from the point that a
   - Ad content suggestions (headlines, ad copy)
   - Call-to-action phrases
   - Visual style recommendations
+- Custom image upload is now supported in the Ad Wizard, allowing users to include their own images in the ad generation process.
+- The custom image is handled securely, converted to a data URL for transmission, and included in the ad generation request.
 - Anonymous users can use both the Ad Wizard and the standard form.
 - The credit system and transaction handling remain the same for both ad creation methods.
 - AI-assisted content generation is available in both the Ad Wizard and the standard form.
@@ -115,4 +121,4 @@ This document explains the updated flow of the application from the point that a
 - Error handling and authentication state updates are implemented consistently across both ad creation methods.
 - The Navbar component (components/Navbar.tsx) is present on all pages, providing navigation options and user account information.
 
-This updated flow provides users with more flexibility in how they create ads, catering to both those who prefer a guided experience and those who are comfortable with a more direct approach. The integration of advanced AI assistance throughout the process helps users create more effective and personalized ads with less effort.
+This updated flow provides users with more flexibility in how they create ads, catering to both those who prefer a guided experience and those who are comfortable with a more direct approach. The integration of advanced AI assistance throughout the process helps users create more effective and personalized ads with less effort. The addition of custom image upload further enhances the personalization options for users, allowing them to create ads that better align with their brand identity.

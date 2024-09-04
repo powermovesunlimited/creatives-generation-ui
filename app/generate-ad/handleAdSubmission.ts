@@ -2,11 +2,30 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "@/components/ui/use-toast";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
+const uploadImageToAzure = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/upload-to-azure', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    console.log('Failed to upload image:', response);
+    throw new Error('Failed to upload image');
+  }
+
+  const data = await response.json();
+  return data.url;
+};
+
 export type RequestData = {
   headline: string;
   body_text: string;
   additional_description?: string;
-  image?: string;
+  image?: string | File;
+  logoImage?: string;
   number_of_variations: number;
   call_to_action_text: string;
   instructional_prompt: string;
@@ -29,33 +48,42 @@ export const handleAdSubmission = async (
   if (!user) {
     // Check if we're in production environment
     if (process.env.NODE_ENV === 'production') {
-      // Get the user's IP address
-      const { data: { ip_address } } = await supabase.functions.invoke('get-ip-address');
+      try {
+        // Get the user's IP address
+        const { data, error } = await supabase.functions.invoke('get-ip-address');
+        
+        if (error || !data || !data.ip_address) {
+          throw new Error('Failed to get IP address');
+        }
 
-      // Check the number of anonymous accounts created from this IP in the last 24 hours
-      const { data: anonymousAccounts, error: countError } = await supabase
-        .from('anonymous_accounts')
-        .select('created_at')
-        .eq('ip_address', ip_address)
-        .gte('created_at', new Date(Date.now() - RATE_LIMIT_WINDOW).toISOString());
+        const ip_address = data.ip_address;
 
-      if (countError) {
-        console.error("Error checking anonymous accounts:", countError);
+        // Check the number of anonymous accounts created from this IP in the last 24 hours
+        const { data: anonymousAccounts, error: countError } = await supabase
+          .from('anonymous_accounts')
+          .select('created_at')
+          .eq('ip_address', ip_address);
+
+        if (countError) {
+          throw new Error('Error checking anonymous accounts');
+        }
+
+        if (anonymousAccounts.length >= ANONYMOUS_ACCOUNT_LIMIT) {
+          toast({
+            title: "Account Creation Limit Reached",
+            description: "You've reached the limit for creating anonymous accounts. Please sign up for a full account to continue.",
+            variant: "destructive",
+          });
+          router.push('/login'); // Redirect to signup page
+          return;
+        }
+      } catch (error) {
+        console.error("Error in IP address check:", error);
         toast({
           title: "Error",
           description: "Unable to process your request. Please try again later.",
           variant: "destructive",
         });
-        return;
-      }
-
-      if (anonymousAccounts && anonymousAccounts.length >= ANONYMOUS_ACCOUNT_LIMIT) {
-        toast({
-          title: "Account Creation Limit Reached",
-          description: "You've reached the limit for creating anonymous accounts. Please sign up for a full account to continue.",
-          variant: "destructive",
-        });
-        router.push('/signup'); // Redirect to signup page
         return;
       }
     }
@@ -97,12 +125,20 @@ export const handleAdSubmission = async (
 
     // In production, log the anonymous account creation
     if (process.env.NODE_ENV === 'production') {
-      const { data: { ip_address } } = await supabase.functions.invoke('get-ip-address');
-      await supabase.from('anonymous_accounts').insert({
-        user_id: data.user!.id,
-        ip_address,
-        created_at: new Date().toISOString()
-      });
+      try {
+        const { data: ipData, error: ipError } = await supabase.functions.invoke('get-ip-address');
+        if (ipError || !ipData || !ipData.ip_address) {
+          throw new Error('Failed to get IP address for logging');
+        }
+        await supabase.from('anonymous_accounts').insert({
+          user_id: data.user!.id,
+          ip_address: ipData.ip_address,
+          created_at: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error("Error logging anonymous account:", error);
+        // Continue execution even if logging fails
+      }
     }
 
     // Update the authentication state
@@ -149,8 +185,31 @@ export const handleAdSubmission = async (
   proceedToAdGeneration(formData, router);
 };
 
-const proceedToAdGeneration = (formData: RequestData, router: AppRouterInstance) => {
+const proceedToAdGeneration = async (formData: RequestData, router: AppRouterInstance) => {
+  let encodedData = { ...formData };
+
+  // If the image is a File object, upload it to Azure Blob Storage and get the URL
+  if (formData.image instanceof File) {
+    try {
+      const imageUrl = await uploadImageToAzure(formData.image);
+      console.log("Image uploaded to Azure:", imageUrl);
+      encodedData.image = imageUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Error",
+        description: "Unable to upload image. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
+  } else if (formData.image === '') {
+    // Remove the image field if it's empty
+    delete encodedData.image;
+  }
+
+
   // Encode the entire formData object as a JSON string
-  const encodedData = encodeURIComponent(JSON.stringify(formData));
-  router.push(`/ad-results?data=${encodedData}`);
+  const encodedDataString = encodeURIComponent(JSON.stringify(encodedData));
+  router.push(`/ad-results?data=${encodedDataString}`);
 };

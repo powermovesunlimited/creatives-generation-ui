@@ -10,7 +10,7 @@ import disposableDomains from "disposable-email-domains";
 import { useState, useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { AiOutlineGoogle } from "react-icons/ai";
-import { WaitingForMagicLink } from "./WaitingForMagicLink";
+import { MagicLinkForm } from "./MagicLinkForm";
 import { ConfirmSignUp } from "./ConfirmSignUp";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -45,8 +45,8 @@ const contentVariants = {
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { 
-    y: 0, 
+  visible: {
+    y: 0,
     opacity: 1,
     transition: { type: "spring", stiffness: 300, damping: 24 }
   },
@@ -62,9 +62,9 @@ export const Login = ({
 }) => {
   const supabase = createClientComponentClient<Database>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMagicLinkSent, setIsMagicLinkSent] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [signUpEmail, setSignUpEmail] = useState<string | null>(null);
+  const [showMagicLinkForm, setShowMagicLinkForm] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -167,29 +167,8 @@ export const Login = ({
     }
   };
 
-  const signInWithMagicLink = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-
-    if (error) {
-      console.error("Magic Link error:", error);
-      toast({
-        title: "Magic Link Error",
-        variant: "destructive",
-        description: error.message,
-        duration: 5000,
-      });
-    } else {
-      setIsMagicLinkSent(true);
-    }
-  };
-
   const signUpWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -199,6 +178,24 @@ export const Login = ({
 
     if (error) {
       throw error;
+    }
+    // Add 5 credits to the new account
+    const { error: creditsError } = await supabase
+      .from('credits')
+      .insert({
+        user_id: data.user!.id,
+        credits: 5,
+        created_at: new Date().toISOString()
+      });
+
+    if (creditsError) {
+      console.error("Error adding credits:", creditsError);
+      toast({
+        title: "Error",
+        description: "Unable to add credits to your account. Please try again later.",
+        variant: "destructive",
+      });
+      return;
     }
     setSignUpEmail(email);
   };
@@ -218,35 +215,33 @@ export const Login = ({
     return <ConfirmSignUp email={signUpEmail} />;
   }
 
-  if (isMagicLinkSent) {
-    return (
-      <WaitingForMagicLink toggleState={() => setIsMagicLinkSent(false)} />
-    );
+  if (showMagicLinkForm) {
+    return <MagicLinkForm toggleState={() => setShowMagicLinkForm(false)} />;
   }
 
   return (
     <div className="min-h-screen flex items-start justify-center ">
       <div className="w-full max-w-md perspective-1000 mt-20">
-        <motion.div 
+        <motion.div
           className="rounded-3xl shadow-2xl overflow-hidden relative bg-white dark:bg-gray-800"
           initial="front"
           animate={isSignUp ? "back" : "front"}
           variants={cardVariants}
           style={{ transformStyle: "preserve-3d" }}
         >
-          <motion.div 
+          <motion.div
             className="p-8 backface-hidden"
             variants={contentVariants}
             style={{ transformStyle: "preserve-3d" }}
           >
-            <motion.h2 
+            <motion.h2
               className="text-4xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 dark:from-purple-300 dark:to-pink-500"
               variants={itemVariants}
             >
               {isSignUp ? "Join Us" : "Welcome Back"}
             </motion.h2>
-            
-            <motion.div variants={itemVariants}>
+
+            {/* <motion.div variants={itemVariants}>
               <Button
                 onClick={signInWithGoogle}
                 variant="outline"
@@ -255,7 +250,7 @@ export const Login = ({
                 <AiOutlineGoogle size={24} className="mr-2 text-purple-500 dark:text-purple-400" />
                 Continue with Google
               </Button>
-            </motion.div>
+            </motion.div> */}
 
             <motion.div variants={itemVariants}>
               <OR />
@@ -325,11 +320,10 @@ export const Login = ({
                 <motion.div variants={itemVariants}>
                   <Button
                     type="submit"
-                    className={`w-full text-white font-semibold py-3 rounded-lg transition-colors duration-300 ${
-                      isSignUp 
-                        ? 'bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600' 
+                    className={`w-full text-white font-semibold py-3 rounded-lg transition-colors duration-300 ${isSignUp
+                        ? 'bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600'
                         : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                    }`}
+                      }`}
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Processing..." : (isSignUp ? "Create Account" : "Sign In")}
@@ -342,11 +336,10 @@ export const Login = ({
               <Button
                 variant="link"
                 onClick={() => setIsSignUp(!isSignUp)}
-                className={`w-full ${
-                  isSignUp 
-                    ? 'text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300' 
+                className={`w-full ${isSignUp
+                    ? 'text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300'
                     : 'text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300'
-                } transition-colors duration-300`}
+                  } transition-colors duration-300`}
               >
                 {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
               </Button>
@@ -358,7 +351,7 @@ export const Login = ({
 
             <motion.div variants={itemVariants}>
               <Button
-                onClick={() => signInWithMagicLink(register("email").value)}
+                onClick={() => setShowMagicLinkForm(true)}
                 variant="outline"
                 className="w-full mt-4 text-gray-700 dark:text-gray-200 border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors duration-300"
               >

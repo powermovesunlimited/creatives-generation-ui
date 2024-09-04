@@ -33,6 +33,7 @@ interface AdContent {
 }
 
 interface RelevantImage {
+  id: string;
   src: string;
   alt: string;
   desc: string;
@@ -65,8 +66,10 @@ export default function AdWizardClient() {
     aiContent: AdContent | null;
     businessType: string;
     visualTheme: string;
-    customImage: string | null;
+    referenceImage?: RelevantImage | File;
     relevantImages: RelevantImage[];
+    logoImage?: RelevantImage;
+    adCopy: string;
   }>({
     url: '',
     businessInfo: null,
@@ -75,14 +78,14 @@ export default function AdWizardClient() {
     headline: "",
     body_text: "",
     additional_description: "",
-    image: "Generate with tool",
+    image: "",
     call_to_action_text: "",
     instructional_prompt: "",
     number_of_variations: 1,
     dimensions: "1080x1080",
     visualTheme: '',
-    customImage: null,
     relevantImages: [],
+    adCopy: '',
   });
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));

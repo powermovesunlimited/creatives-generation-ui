@@ -11,13 +11,20 @@ import { Label } from "@/components/ui/label";
 import { handleAdSubmission } from "@/app/generate-ad/handleAdSubmission";
 import { useRouter } from 'next/navigation';
 
+interface RelevantImage {
+  id: string;
+  src: string;
+  alt: string;
+}
+
 interface FinalReviewProps {
   adData: {
     headline: string;
     adCopy: string;
-    callToAction: string;
+    call_to_action_text: string;
     visualTheme: string;
-    customImage: File | null;
+    referenceImage?: RelevantImage | File;
+    logoImage?: RelevantImage;
   };
   onPrev: () => void;
   updateAdData: (newData: Partial<typeof adData>) => void;
@@ -26,16 +33,29 @@ interface FinalReviewProps {
 const AdPreview: React.FC<{ adData: FinalReviewProps['adData']; dimensions: string }> = ({ adData, dimensions }) => {
   const [width, height] = dimensions.split('x').map(Number);
   const aspectRatio = width / height;
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (adData.referenceImage) {
+      if (adData.referenceImage instanceof File) {
+        const url = URL.createObjectURL(adData.referenceImage);
+        setImageUrl(url);
+        return () => URL.revokeObjectURL(url);
+      } else {
+        setImageUrl(adData.referenceImage.src);
+      }
+    }
+  }, [adData.referenceImage]);
 
   return (
     <div 
       className="relative w-full bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg shadow-lg overflow-hidden"
       style={{ paddingBottom: `${(1 / aspectRatio) * 100}%` }}
     >
-      {adData.customImage && (
+      {imageUrl && (
         <img
-          src={URL.createObjectURL(adData.customImage)}
-          alt="Custom background"
+          src={imageUrl}
+          alt="Reference background"
           className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
         />
       )}
@@ -43,7 +63,7 @@ const AdPreview: React.FC<{ adData: FinalReviewProps['adData']; dimensions: stri
         <h3 className="text-3xl font-bold mb-4 text-gray-800">{adData.headline}</h3>
         <p className="text-lg mb-6 text-gray-700">{adData.adCopy}</p>
         <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full font-semibold hover:from-purple-600 hover:to-indigo-600 transition-all duration-200">
-          {adData.callToAction}
+          {adData.call_to_action_text}
         </button>
       </div>
       <div className="absolute bottom-2 right-2 text-sm text-white bg-black bg-opacity-50 px-2 py-1 rounded">
@@ -77,10 +97,12 @@ export default function FinalReview({ adData, onPrev, updateAdData }: FinalRevie
       const requestData = {
         headline: adData.headline,
         body_text: adData.adCopy,
-        call_to_action_text: adData.callToAction,
+        call_to_action_text: adData.call_to_action_text,
         instructional_prompt: instructionalPrompt,
         number_of_variations: numberOfVariations,
         dimensions: dimensions,
+        image: adData.referenceImage instanceof File ? adData.referenceImage : adData.referenceImage?.src,
+        logoImage: adData.logoImage?.src
       };
 
       await handleAdSubmission(requestData, router, setShowEmailPrompt);
@@ -190,14 +212,19 @@ export default function FinalReview({ adData, onPrev, updateAdData }: FinalRevie
                       disabled={!isEditing}
                     />
                     <Input
-                      value={adData.callToAction}
-                      onChange={(e) => handleEdit('callToAction', e.target.value)}
+                      value={adData.call_to_action_text}
+                      onChange={(e) => handleEdit('call_to_action_text', e.target.value)}
                       placeholder="Call to Action"
                       disabled={!isEditing}
                     />
                     <p className="text-sm text-gray-500">Visual Theme: {adData.visualTheme}</p>
-                    {adData.customImage && (
-                      <p className="text-sm text-gray-500">Custom Image: {adData.customImage.name}</p>
+                    {adData.referenceImage && (
+                      <p className="text-sm text-gray-500">
+                        Reference Image: {adData.referenceImage instanceof File ? adData.referenceImage.name : adData.referenceImage.alt}
+                      </p>
+                    )}
+                    {adData.logoImage && (
+                      <p className="text-sm text-gray-500">Logo Image: {adData.logoImage.alt}</p>
                     )}
                   </div>
                 </div>

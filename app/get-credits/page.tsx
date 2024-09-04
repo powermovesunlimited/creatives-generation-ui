@@ -3,10 +3,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import StripePricingTable from "@/components/stripe/StripeTable";
 import Image from "next/image";
+import SuccessMessage from "./SuccessMessage";
 
 export const dynamic = "force-dynamic";
 
-export default async function Index() {
+export default async function Index({ searchParams }: { searchParams: { session_id?: string } }) {
   const supabase = createServerComponentClient({ cookies });
 
   const {
@@ -17,8 +18,11 @@ export default async function Index() {
     return redirect("/login");
   }
 
+  const showSuccessMessage = !!searchParams.session_id;
+
   return (
     <div className="flex flex-col items-center pt-16 bg-background text-foreground">
+      {showSuccessMessage && <SuccessMessage />}
       <div className="flex flex-col lg:flex-row items-start gap-8 p-8 max-w-7xl w-full">
         <div className="flex flex-col space-y-6 lg:w-1/2 w-full">
           <h1 className="text-4xl font-bold text-accent-foreground leading-tight">

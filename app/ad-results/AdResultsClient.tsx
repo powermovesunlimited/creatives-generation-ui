@@ -128,7 +128,7 @@ export default function AdResultsClient() {
 
       // Check if this transaction has already been processed
       const { data: existingTransaction } = await supabase
-        .from('ad_transactions_test')
+        .from('ad_transactions')
         .select('id')
         .eq('transaction_id', transactionId)
         .single();
@@ -154,7 +154,7 @@ export default function AdResultsClient() {
         const result = await response.json();
         if (result.status === "success") {
           // Record the transaction
-          await supabase.from('ad_transactions_test').insert({
+          await supabase.from('ad_transactions').insert({
             user_id: user.id,
             transaction_id: transactionId,
             ad_id: result.data.record_id

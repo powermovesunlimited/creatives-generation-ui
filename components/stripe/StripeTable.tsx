@@ -1,6 +1,7 @@
 'use client'
 import { User } from '@supabase/supabase-js';
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 
 interface StripePricingTableProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
   'pricing-table-id': string;
@@ -31,6 +32,71 @@ const StripePricingTable = ({ user }: Props) => {
       document.body.removeChild(script);
     }
   }, []);
+
+  const handlePriceClick = useCallback(async (event: Event) => {
+    event.preventDefault();
+    const priceId = (event.target as HTMLAnchorElement).dataset.priceId;
+    
+    if (!priceId) {
+      console.error('No price ID found');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Server response:', data);
+
+      if (!data.sessionId) {
+        throw new Error('No session ID returned from server');
+      }
+
+      const publishableKey = process.env.NODE_ENV === 'production'
+        ? process.env.STRIPE_PUBLISHABLE_KEY
+        : process.env.STRIPE_PUBLISHABLE_TEST_KEY;
+
+      if (!publishableKey) {
+        throw new Error('Stripe publishable key is not set');
+      }
+
+      const stripe = await loadStripe(publishableKey);
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
+
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      if (error) {
+        console.error('Stripe redirectToCheckout error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error during checkout process:', error);
+      // Here you might want to show an error message to the user
+    }
+  }, [user.id]);
+
+  useEffect(() => {
+    const pricingTable = document.querySelector('stripe-pricing-table');
+    pricingTable?.addEventListener('click', handlePriceClick);
+
+    return () => {
+      pricingTable?.removeEventListener('click', handlePriceClick);
+    };
+  }, [handlePriceClick]);
 
   const isProduction = process.env.NODE_ENV === 'production';
   const pricingTableId = isProduction

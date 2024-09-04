@@ -1,31 +1,12 @@
-import Navbar from "@/components/Navbar";
-import { Toaster } from "@/components/ui/toaster";
-import "./globals.css";
-import { Suspense } from "react";
+import type { Metadata } from 'next'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Auto Creatives - AI Ad Generation",
   description: "Generate stunning ad creatives in minutes using AI",
 };
 
-export default function RootLayout({ children }: any) {
-  return (
-    <html lang="en">
-      <body className="min-h-screen flex flex-col">
-        <section>
-          <Suspense
-            fallback={
-              <div className="flex w-full px-4 lg:px-40 py-4 items-center border-b text-center gap-8 justify-between h-[69px]" />
-            }
-          >
-            <Navbar />
-          </Suspense>
-        </section>
-        <main className="flex flex-1 flex-col items-center py-16">
-          {children}
-        </main>
-        <Toaster />
-      </body>
-    </html>
-  );
+import RootLayoutClient from './RootLayoutClient'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return <RootLayoutClient>{children}</RootLayoutClient>
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FaMagic, FaRobot, FaPencilAlt, FaArrowRight } from 'react-icons/fa';
+import { FaMagic, FaRobot, FaPencilAlt, FaArrowRight, FaUpload, FaTimes } from 'react-icons/fa';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ export default function GenerateAdClient() {
     headline: "",
     body_text: "",
     additional_description: "",
-    image: "Generate with tool",
+    image: "",
     call_to_action_text: "",
     instructional_prompt: "",
     number_of_variations: 1,
@@ -36,6 +36,8 @@ export default function GenerateAdClient() {
   const [selectedBusinessType, setSelectedBusinessType] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -142,6 +144,32 @@ export default function GenerateAdClient() {
 
   const handleUseWizard = () => {
     router.push('/ad_wizard');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        setFormData((prevData) => ({
+          ...prevData,
+          image: file,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDeleteImage = () => {
+    setImagePreview(null);
+    setFormData((prevData) => ({
+      ...prevData,
+      image: "",
+    }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (

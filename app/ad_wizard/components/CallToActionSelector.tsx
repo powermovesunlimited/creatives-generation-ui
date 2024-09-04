@@ -16,10 +16,18 @@ interface BusinessInfo {
   key_products_or_services: string[];
 }
 
+interface RelevantImage {
+  id: string;
+  src: string;
+  alt: string;
+}
+
 interface CallToActionSelectorProps {
   adData: {
     businessInfo: BusinessInfo | null;
-    callToAction: string;
+    visualTheme: string;
+    referenceImage?: RelevantImage | File;
+    call_to_action_text: string;
   };
   updateAdData: (newData: Partial<typeof adData>) => void;
   onNext: () => void;
@@ -73,7 +81,7 @@ export default function CallToActionSelector({ adData, updateAdData, onNext, onP
 
   const handleCustomCTASubmit = () => {
     if (customCTA.trim()) {
-      updateAdData({ callToAction: customCTA.trim() });
+      updateAdData({ call_to_action_text: customCTA.trim() });
       setIsCustomizing(false);
     }
   };
@@ -133,8 +141,8 @@ export default function CallToActionSelector({ adData, updateAdData, onNext, onP
                 transition={{ duration: 0.3 }}
               >
                 <RadioGroup
-                  value={adData.callToAction}
-                  onValueChange={(value) => updateAdData({ callToAction: value })}
+                  value={adData.call_to_action_text}
+                  onValueChange={(value) => updateAdData({ call_to_action_text: value })}
                   className="space-y-3"
                 >
                   {suggestedCTAs.map((cta) => (
@@ -183,7 +191,7 @@ export default function CallToActionSelector({ adData, updateAdData, onNext, onP
             <Button onClick={onPrev} variant="outline" className="px-8 py-3 text-lg">Back</Button>
             <Button
               onClick={onNext}
-              disabled={!adData.callToAction}
+              disabled={!adData.call_to_action_text}
               className="px-8 py-3 text-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
             >
               Next
