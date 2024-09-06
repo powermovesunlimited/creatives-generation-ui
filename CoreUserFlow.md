@@ -103,6 +103,35 @@ This document explains the updated flow of the application from the point that a
 - Users are redirected here when they run out of credits (except for anonymous users who are prompted to provide their email).
 - This page provides options for users to purchase more credits.
 
+## 8. Privacy Policy Page (app/privacy-policy/page.tsx)
+
+- This page contains the privacy policy for Poly186 DAO LLC.
+- It explains how user data is collected, used, and protected.
+- Key points include:
+  - Types of data collected (names, email addresses, IP addresses, ad creation inputs, usage data)
+  - How data is used (account creation, service improvement, marketing, ad generation)
+  - Data sharing practices (analytics, payment processing, marketing)
+  - Data security measures
+  - User rights (opt-out of marketing, data deletion requests)
+  - Age restrictions (18 years or older)
+- The privacy policy is accessible via a link in the footer or navbar.
+
+## 9. Terms of Service Page (app/terms-of-service/page.tsx)
+
+- This page contains the terms of service for Poly186 DAO LLC.
+- It outlines the rules and regulations for using the service.
+- Key points include:
+  - Description of the service
+  - User account information
+  - Credit system and payments
+  - Refund policy
+  - User content and intellectual property rights
+  - Limitation of liability
+  - Age restrictions (18 years or older)
+  - Modifications to service
+  - Governing law (State of Wyoming, United States)
+- The terms of service are accessible via a link in the footer or navbar.
+
 ## Additional Notes
 
 - The application now supports two methods of ad creation: the new AI-powered Ad Wizard and the standard form.
@@ -120,5 +149,7 @@ This document explains the updated flow of the application from the point that a
 - The application continues to support anonymous users, allowing them to generate ads without a full account.
 - Error handling and authentication state updates are implemented consistently across both ad creation methods.
 - The Navbar component (components/Navbar.tsx) is present on all pages, providing navigation options and user account information.
+- Privacy Policy and Terms of Service pages have been added to provide users with important information about data handling and usage rules.
+- Both the Privacy Policy and Terms of Service are specific to Poly186 DAO LLC and reflect the company's practices and legal requirements.
 
-This updated flow provides users with more flexibility in how they create ads, catering to both those who prefer a guided experience and those who are comfortable with a more direct approach. The integration of advanced AI assistance throughout the process helps users create more effective and personalized ads with less effort. The addition of custom image upload further enhances the personalization options for users, allowing them to create ads that better align with their brand identity.
+This updated flow provides users with more flexibility in how they create ads, catering to both those who prefer a guided experience and those who are comfortable with a more direct approach. The integration of advanced AI assistance throughout the process helps users create more effective and personalized ads with less effort. The addition of custom image upload further enhances the personalization options for users, allowing them to create ads that better align with their brand identity. The new privacy policy and terms of service pages ensure transparency and compliance with legal requirements.

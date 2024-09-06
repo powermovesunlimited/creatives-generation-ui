@@ -89,6 +89,16 @@ export default function Navbar({ authState }: { authState: 'authenticated' | 'un
               <SheetContent side="left" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col gap-4">
                   <NavLinks mobile />
+                  <Link href="/privacy-policy">
+                    <Button variant="ghost" className="w-full justify-start">
+                      Privacy Policy
+                    </Button>
+                  </Link>
+                  <Link href="/terms-of-service">
+                    <Button variant="ghost" className="w-full justify-start">
+                      Terms of Service
+                    </Button>
+                  </Link>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -123,6 +133,13 @@ export default function Navbar({ authState }: { authState: 'authenticated' | 'un
                 <DropdownMenuSeparator />
                 <Link href="/ad-gallery">
                   <DropdownMenuItem>Ad Gallery</DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <Link href="/privacy-policy">
+                  <DropdownMenuItem>Privacy Policy</DropdownMenuItem>
+                </Link>
+                <Link href="/terms-of-service">
+                  <DropdownMenuItem>Terms of Service</DropdownMenuItem>
                 </Link>
                 <DropdownMenuSeparator />
                 <form action="/auth/sign-out" method="post">
