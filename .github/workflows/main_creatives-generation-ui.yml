@@ -30,6 +30,22 @@ jobs:
           tags: creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}
           file: ./Dockerfile
           context: .
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE }}
+            NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            WEBHOOK_SIGNING_SECRET=${{ secrets.WEBHOOK_SIGNING_SECRET }}
+            NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}
+            NEXT_PUBLIC_STRIPE_IS_ENABLED=${{ secrets.NEXT_PUBLIC_STRIPE_IS_ENABLED }}
+            NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE }}
+            NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST=${{ secrets.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST }}
+            STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+            STRIPE_PUBLISHABLE_TEST_KEY=${{ secrets.STRIPE_PUBLISHABLE_TEST_KEY }}
+            AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -48,22 +64,29 @@ jobs:
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_dea20b89ecb8405ba4583d1e175e4e27 }}
           images: 'creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}'
 
-      - name: Check and set OPENAI_API_KEY
+      - name: Set environment variables
         uses: azure/CLI@v1
         with:
           azcliversion: 2.30.0
           inlineScript: |
             #!/bin/bash
             set -e
-            # Check if OPENAI_API_KEY is set
-            key_exists=$(az webapp config appsettings list --name creatives-generation-ui --resource-group creatives-generation-rg --query "[?name=='OPENAI_API_KEY']" --output tsv)
-            if [ -z "$key_exists" ]
-            then
-              echo "OPENAI_API_KEY is not set. Setting it now."
-              az webapp config appsettings set --name creatives-generation-ui --resource-group creatives-generation-rg --settings OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            else
-              echo "OPENAI_API_KEY is already set."
-            fi
+            az webapp config appsettings set --name creatives-generation-ui --resource-group creatives-generation-rg --settings \
+              NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
+              NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
+              NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }} \
+              NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE }} \
+              NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE }} \
+              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+              WEBHOOK_SIGNING_SECRET=${{ secrets.WEBHOOK_SIGNING_SECRET }} \
+              NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }} \
+              NEXT_PUBLIC_STRIPE_IS_ENABLED=${{ secrets.NEXT_PUBLIC_STRIPE_IS_ENABLED }} \
+              NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE }} \
+              NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST=${{ secrets.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST }} \
+              STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }} \
+              STRIPE_PUBLISHABLE_TEST_KEY=${{ secrets.STRIPE_PUBLISHABLE_TEST_KEY }} \
+              AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
 
       - name: Restart Azure Web App
         uses: azure/CLI@v1
