@@ -13,18 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Generate .env.local file
-        run: |
-          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
-          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" >> .env.local
-          echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" >> .env.local
-          echo "NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE }}" >> .env.local
-          echo "NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE }}" >> .env.local
-          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env.local
-          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.local
-          echo "WEBHOOK_SIGNING_SECRET=${{ secrets.WEBHOOK_SIGNING_SECRET }}" >> .env.local
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -60,15 +48,26 @@ jobs:
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_dea20b89ecb8405ba4583d1e175e4e27 }}
           images: 'creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}'
 
-      - name: Set Web App settings
-        uses: azure/appservice-settings@v1
+      - name: Check and set OPENAI_API_KEY
+        uses: azure/CLI@v1
         with:
-          app-name: 'creatives-generation-ui'
-          app-settings-json: |
-            [
-              {
-                "name": "PORT",
-                "value": "3000"
-              }
-            ]
-        id: settings
+          azcliversion: 2.30.0
+          inlineScript: |
+            #!/bin/bash
+            set -e
+            # Check if OPENAI_API_KEY is set
+            key_exists=$(az webapp config appsettings list --name creatives-generation-ui --resource-group creatives-generation-rg --query "[?name=='OPENAI_API_KEY']" --output tsv)
+            if [ -z "$key_exists" ]
+            then
+              echo "OPENAI_API_KEY is not set. Setting it now."
+              az webapp config appsettings set --name creatives-generation-ui --resource-group creatives-generation-rg --settings OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            else
+              echo "OPENAI_API_KEY is already set."
+            fi
+
+      - name: Restart Azure Web App
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az webapp restart --name creatives-generation-ui --resource-group creatives-generation-rg

@@ -14,8 +14,13 @@ interface ImageData {
 
 function isValidImageUrl(url: string): boolean {
   const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
-  const extension = url.split('.').pop()?.toLowerCase();
-  return validExtensions.includes(extension);
+  const extension = url.split('.').pop();
+
+  if (extension === undefined) {
+    return false;
+  }
+
+  return validExtensions.includes(extension.toLowerCase());
 }
 
 export async function POST(request: Request) {

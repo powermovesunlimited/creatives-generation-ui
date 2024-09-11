@@ -1,6 +1,7 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { Suspense } from "react";
@@ -41,6 +42,7 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
         <main className="flex flex-1 flex-col items-center py-16">
           {children}
         </main>
+        <Footer />
         <Toaster />
       </body>
     </html>
