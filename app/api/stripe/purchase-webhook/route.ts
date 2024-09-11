@@ -7,46 +7,47 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const stripeSecretKey = process.env.NODE_ENV === 'production'
-  ? process.env.STRIPE_SECRET_KEY
-  : process.env.STRIPE_SECRET_TEST_KEY;
 
-const endpointSecret = process.env.NODE_ENV === 'production'
-  ? process.env.STRIPE_WEBHOOK_SECRET
-  : process.env.STRIPE_WEBHOOK_TEST_SECRET;
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl) {
-  throw new Error("MISSING NEXT_PUBLIC_SUPABASE_URL!");
-}
-
-if (!supabaseServiceRoleKey) {
-  throw new Error("MISSING SUPABASE_SERVICE_ROLE_KEY!");
-}
-
-const creditsPerPriceId: {
-  [key: string]: number;
-} = {
-  // Live price IDs
-  [process.env.STRIPE_PRICE_ID_25_CREDIT as string]: 25,
-  [process.env.STRIPE_PRICE_ID_50_CREDITS as string]: 50,
-  [process.env.STRIPE_PRICE_ID_100_CREDITS as string]: 100,
-  [process.env.STRIPE_PRICE_ID_500_CREDITS as string]: 500,
-  // Test price IDs
-  [process.env.STRIPE_PRICE_TEST_ID_25_CREDITS as string]: 25,
-  [process.env.STRIPE_PRICE_TEST_ID_50_CREDITS as string]: 50,
-  [process.env.STRIPE_PRICE_TEST_ID_100_CREDITS as string]: 100,
-  [process.env.STRIPE_PRICE_TEST_ID_500_CREDITS as string]: 500,
-};
-
-console.log('Stripe Price IDs and Credits:', creditsPerPriceId);
 
 type CreditsRow = Database['public']['Tables']['credits']['Row'];
 type CreditsInsert = Database['public']['Tables']['credits']['Insert'];
 type CreditsUpdate = Database['public']['Tables']['credits']['Update'];
 
 export async function POST(request: Request) {
+  const stripeSecretKey = process.env.NODE_ENV === 'production'
+    ? process.env.STRIPE_SECRET_KEY
+    : process.env.STRIPE_SECRET_TEST_KEY;
+
+  const endpointSecret = process.env.NODE_ENV === 'production'
+    ? process.env.STRIPE_WEBHOOK_SECRET
+    : process.env.STRIPE_WEBHOOK_TEST_SECRET;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error("MISSING NEXT_PUBLIC_SUPABASE_URL!");
+  }
+
+  if (!supabaseServiceRoleKey) {
+    throw new Error("MISSING SUPABASE_SERVICE_ROLE_KEY!");
+  }
+
+  const creditsPerPriceId: {
+    [key: string]: number;
+  } = {
+    // Live price IDs
+    [process.env.STRIPE_PRICE_ID_25_CREDIT as string]: 25,
+    [process.env.STRIPE_PRICE_ID_50_CREDITS as string]: 50,
+    [process.env.STRIPE_PRICE_ID_100_CREDITS as string]: 100,
+    [process.env.STRIPE_PRICE_ID_500_CREDITS as string]: 500,
+    // Test price IDs
+    [process.env.STRIPE_PRICE_TEST_ID_25_CREDITS as string]: 25,
+    [process.env.STRIPE_PRICE_TEST_ID_50_CREDITS as string]: 50,
+    [process.env.STRIPE_PRICE_TEST_ID_100_CREDITS as string]: 100,
+    [process.env.STRIPE_PRICE_TEST_ID_500_CREDITS as string]: 500,
+  };
+
+  console.log('Stripe Price IDs and Credits:', creditsPerPriceId);
   console.log("Webhook received from: ", request.url);
   const headersObj = headers();
   const sig = headersObj.get("stripe-signature");
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
   // Handle the event
   switch (event.type) {
     case "checkout.session.completed":
-      return handleCheckoutSessionCompleted(event, stripe, supabase);
+      return handleCheckoutSessionCompleted(event, stripe, supabase, creditsPerPriceId);
     case "charge.succeeded":
     case "charge.updated":
     case "payment_intent.succeeded":
@@ -110,7 +111,8 @@ export async function POST(request: Request) {
 async function handleCheckoutSessionCompleted(
   event: Stripe.Event,
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient<Database>>
+  supabase: ReturnType<typeof createClient<Database>>,
+  creditsPerPriceId: { [key: string]: number }
 ) {
   const checkoutSessionCompleted = event.data.object as Stripe.Checkout.Session;
   console.log("Processing checkout.session.completed event:", checkoutSessionCompleted.id);

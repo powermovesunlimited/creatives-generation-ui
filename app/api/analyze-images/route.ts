@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 function isValidImageUrl(url: string): boolean {
   const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
   const extension = url.split('.').pop()?.toLowerCase();
-  return validExtensions.includes(extension);
+  return validExtensions.includes(extension || '');
 }
 
 async function determineImageRelevance(images: any[], businessContext: string, req: Request): Promise<any[]> {
