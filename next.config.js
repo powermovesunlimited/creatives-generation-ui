@@ -29,10 +29,18 @@ const nextConfig = {
     STRIPE_PUBLISHABLE_TEST_KEY: process.env.STRIPE_PUBLISHABLE_TEST_KEY,
     AZURE_STORAGE_CONTAINER_NAME: process.env.AZURE_STORAGE_CONTAINER_NAME,
 
-    
+
   },
   images: {
     domains: ['creativegenstorage.blob.core.windows.net'],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "creativegenstorage.blob.core.windows.net",
+        port: ""
+      },
+
+    ],
   },
 }
 

@@ -7,7 +7,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from 'framer-motion';
-import GalleryItemCard from './GalleryItemCard';
+import ModernGalleryItemCard from './ModernGalleryItemCard';
 import {
   Dialog,
   DialogContent,
@@ -16,9 +16,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ShimmerEffect,
+  processingVariants,
+  ErrorDisplay,
+  NoGenerationsFound,
+  LoadMoreButton
+} from '@/components/gallery/SharedGalleryComponents';
 
-// Define the types based on the ConversionAdRequest model and updated Supabase structure
-type RequestData = {
+export type RequestData = {
   headline: string;
   body_text: string;
   additional_description?: string | null;
@@ -39,12 +45,12 @@ type GeneratedData = {
   generations: GeneratedImage[];
 };
 
-type AdGeneration = {
+export type AdGeneration = {
   id: string;
   created_at: string;
   status: string;
   queue_position?: number | null;
-  request_data: string;
+  request_data: RequestData;
   generated_data?: GeneratedData;
   error_message?: string;
   user_id: string;
@@ -57,60 +63,6 @@ const gradients = [
   'from-pink-100 to-blue-100',
   'from-indigo-100 to-purple-100'
 ];
-
-const shimmerVariants = {
-  hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1,
-    transition: { 
-      duration: 1,
-      repeat: Infinity,
-      repeatType: "reverse" as const,
-    }
-  }
-};
-
-const ShimmerEffect = () => (
-  <motion.div 
-    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-    initial="hidden"
-    animate="visible"
-    variants={{
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          when: "beforeChildren",
-          staggerChildren: 0.1,
-        },
-      },
-    }}
-  >
-    {[...Array(6)].map((_, index) => (
-      <motion.div
-        key={index}
-        className="bg-gray-200 rounded-lg h-64"
-        variants={shimmerVariants}
-      ></motion.div>
-    ))}
-  </motion.div>
-);
-
-const processingVariants = {
-  processing: {
-    opacity: [1, 0.7, 1],
-    scale: [1, 0.98, 1],
-    transition: {
-      duration: 1.5,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-  default: {
-    opacity: 1,
-    scale: 1,
-  },
-};
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
@@ -261,7 +213,7 @@ export default function AdGalleryClient() {
   }, [fetchAdGenerations, page, handleRealtimeUpdate, supabase, getCurrentUser]);
 
   useEffect(() => {
-    const recordId = searchParams.get('recordId');
+    const recordId = searchParams?.get('recordId');
     if (recordId) {
       const element = document.getElementById(recordId);
       if (element) {
@@ -312,15 +264,7 @@ export default function AdGalleryClient() {
   };
 
   if (error) {
-    return (
-      <div className="container mx-auto p-4 text-center">
-        <h1 className="text-2xl font-bold text-destructive mb-4">Error</h1>
-        <p className="text-muted-foreground">{error}</p>
-        <Button onClick={() => fetchAdGenerations(0)} className="mt-4">
-          Retry
-        </Button>
-      </div>
-    );
+    return <ErrorDisplay error={error} onRetry={() => fetchAdGenerations(0)} />;
   }
 
   return (
@@ -334,7 +278,6 @@ export default function AdGalleryClient() {
         Your Creative Ad Journey
       </motion.h1>
 
-      {/* Create New Ad button - now centered above the grid */}
       <motion.div 
         className="mb-12 text-center"
         initial={{ opacity: 0 }}
@@ -351,7 +294,7 @@ export default function AdGalleryClient() {
       {isLoading && page === 0 ? (
         <ShimmerEffect />
       ) : adGenerations.length === 0 ? (
-        <p className="text-center text-muted-foreground">No ad generations found. Start your creative journey!</p>
+        <NoGenerationsFound />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -362,8 +305,14 @@ export default function AdGalleryClient() {
                   variants={processingVariants}
                   animate={generation.status === 'Processing' ? 'processing' : 'default'}
                 >
-                  <GalleryItemCard
-                    generation={generation}
+                  <ModernGalleryItemCard
+                    generations={generation?.generated_data?.generations || []}
+                    requestData={generation.request_data}
+                    status={generation.status}
+                    queue_position={generation.queue_position}
+                    error_message={generation.error_message}
+                    id={generation.id}
+                    created_at={generation.created_at}
                     gradient={gradients[index % gradients.length]}
                     onRegenerate={handleRegenerate}
                     onDelete={openDeleteDialog}
@@ -372,13 +321,7 @@ export default function AdGalleryClient() {
               ))}
             </AnimatePresence>
           </div>
-          {hasMore && (
-            <div className="mt-8 text-center">
-              <Button onClick={loadMore} disabled={isLoading}>
-                {isLoading ? 'Loading...' : 'Load More'}
-              </Button>
-            </div>
-          )}
+          {hasMore && <LoadMoreButton onClick={loadMore} isLoading={isLoading} />}
         </>
       )}
 
