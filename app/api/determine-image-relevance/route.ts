@@ -1,9 +1,5 @@
 // TODO: refactor this to process images in parallel 5 at a time removing the limit of 9 images
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 interface ImageData {
   src: string;
   alt: string;
@@ -145,6 +141,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ relevantImages });
   } catch (error) {
     console.error('Error determining image relevance:', error);
-    return NextResponse.json({ error: 'Failed to determine image relevance', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to determine image relevance', details: error }, { status: 500 });
   }
 }
