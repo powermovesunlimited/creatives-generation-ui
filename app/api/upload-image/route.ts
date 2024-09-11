@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function POST(request: Request) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -23,11 +24,11 @@ export async function POST(request: Request) {
     // Upload to Azure Blob Storage
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING!;
     const containerName = 'images';
-    
+
     const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     const containerClient = blobServiceClient.getContainerClient(containerName);
     const blockBlobClient = containerClient.getBlockBlobClient(filename);
-    
+
     await blockBlobClient.upload(buffer, buffer.length);
 
     const imageUrl = blockBlobClient.url;
