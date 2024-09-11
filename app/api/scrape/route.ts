@@ -5,7 +5,6 @@ import OpenAI from 'openai';
 const AZURE_CRAWL_SERVICE_URL = 'https://crawl4ai-app.azurewebsites.net/crawl';
 const MAX_RETRIES = 4;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function makeRequest(payload: any, retryCount = 0): Promise<any> {
   try {
@@ -43,6 +42,7 @@ async function interpretScrapedData(scrapedData: any): Promise<any> {
   `;
 
   try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

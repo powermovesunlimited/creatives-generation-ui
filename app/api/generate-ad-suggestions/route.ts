@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -33,7 +31,8 @@ export async function POST(req: Request) {
 
       Ensure that the suggestions are diverse and tailored to the specific business information provided.
     `;
-
+    // Initialize OpenAI client
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -86,6 +85,6 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error('Error generating ad suggestions:', error);
-    return NextResponse.json({ error: 'Failed to generate ad suggestions', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to generate ad suggestions', details: error }, { status: 500 });
   }
 }

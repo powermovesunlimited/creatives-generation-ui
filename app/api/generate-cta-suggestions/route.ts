@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export async function POST(req: Request) {
   try {
     const { businessInfo } = await req.json();
@@ -17,7 +15,8 @@ export async function POST(req: Request) {
       Generate 6 compelling and diverse call-to-action (CTA) phrases that would be suitable for this business's advertisements. 
       The CTAs should be short, action-oriented, and tailored to the specific business and its offerings.
     `;
-
+    
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(request: Request) {
   console.log('Received request to /api/generate-crawl-request');
@@ -24,6 +23,7 @@ export async function POST(request: Request) {
 
     console.log('Calling OpenAI API...');
     try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [

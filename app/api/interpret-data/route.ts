@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function interpretScrapedData(scrapedData: any): Promise<any> {
   console.log('Interpreting scraped data:', JSON.stringify(scrapedData, null, 2));
@@ -19,6 +18,7 @@ async function interpretScrapedData(scrapedData: any): Promise<any> {
   `;
 
   try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

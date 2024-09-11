@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export async function POST(req: Request) {
   try {
     const { businessInfo } = await req.json();
@@ -25,7 +23,7 @@ export async function POST(req: Request) {
       Sleek designer high heel shoe, vibrant red patent leather, placed on a mirrored surface. Soft studio lighting creating subtle reflections. Minimalist white background. Sharp focus on the shoe's curves and textures. Cinematic composition with the shoe angled slightly to showcase its profile. Small water droplets on the shoe's surface for added glamour. Text overlay in an elegant sans-serif font: 'Step into Luxury
 
     `;
-
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
