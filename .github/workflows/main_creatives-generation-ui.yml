@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy container app to Azure Web App - creatives-generation-ui
 
 on:
@@ -11,35 +14,24 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      - name: Log in to registry
-        uses: docker/login-action@v2
-        with:
-          registry: https://creativesgenregistry.azurecr.io/
-          username: ${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}
-          password: ${{ secrets.AzureAppService_ContainerPassword_25412b127b9a44df8fda04b79483db26 }}
+    - name: Log in to registry
+      uses: docker/login-action@v2
+      with:
+        registry: https://creativesgenregistry.azurecr.io/
+        username: ${{ secrets.AzureAppService_ContainerUsername_fe4e86ab6b8e4d44be83cbec7bed8260 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_2b56e0e53d484187ba87f9c63b073785 }}
 
-      - name: Build and push container image to registry
-        uses: docker/build-push-action@v3
-        with:
-          push: true
-          tags: creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}
-          file: ./Dockerfile
-          context: .
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
-            NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_DEVELOPMENT_CREDITS_PRICE }}
-            NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE=${{ secrets.NEXT_PUBLIC_CURRENT_PRODUCTION_CREDITS_PRICE }}
-            NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}
-            NEXT_PUBLIC_STRIPE_IS_ENABLED=${{ secrets.NEXT_PUBLIC_STRIPE_IS_ENABLED }}
-            NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_LIVE }}
-            NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST=${{ secrets.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID_TEST }}
-            AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+    - name: Build and push container image to registry
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_fe4e86ab6b8e4d44be83cbec7bed8260 }}/creatives-generation-ui:${{ github.sha }}
+        file: ./Dockerfile
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,33 +41,11 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'creatives-generation-ui'
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_dea20b89ecb8405ba4583d1e175e4e27 }}
-          images: 'creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_64ac0b1346fe4c0d94f54e4372a6dbd1 }}/creatives-generation-ui:${{ github.sha }}'
-
-      - name: Set environment variables
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.30.0
-          inlineScript: |
-            #!/bin/bash
-            set -e
-            az webapp config appsettings set --name creatives-generation-ui --resource-group creatives-generation-rg --settings \
-              NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
-              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
-              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
-              WEBHOOK_SIGNING_SECRET=${{ secrets.WEBHOOK_SIGNING_SECRET }} \
-              STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }} \
-              STRIPE_PUBLISHABLE_TEST_KEY=${{ secrets.STRIPE_PUBLISHABLE_TEST_KEY }}
-
-      - name: Restart Azure Web App
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.30.0
-          inlineScript: |
-            az webapp restart --name creatives-generation-ui --resource-group creatives-generation-rg
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'creatives-generation-ui'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_9c334568d4884996a12c94877056f1cc }}
+        images: 'creativesgenregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_fe4e86ab6b8e4d44be83cbec7bed8260 }}/creatives-generation-ui:${{ github.sha }}'
