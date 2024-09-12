@@ -37,6 +37,9 @@ export default function PublicAdGalleryClient() {
             const { data, error, count } = await supabase
                 .from('ad_generations_test')
                 .select('id, created_at, status, queue_position, request_data, generated_data, error_message, user_id', { count: 'exact' })
+                .eq('status', 'completed')
+                .not('generated_data', 'is', null)
+                .filter('generated_data->generations', 'neq', '[]')
                 .order('created_at', { ascending: false })
                 .range(pageNumber * ITEMS_PER_PAGE, (pageNumber + 1) * ITEMS_PER_PAGE - 1);
 

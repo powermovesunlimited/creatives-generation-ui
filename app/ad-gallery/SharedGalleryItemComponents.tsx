@@ -38,8 +38,14 @@ export const SharedGalleryItem: React.FC<SharedGalleryItemProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const proxyUrl = (url: string) => `/api/proxy-image?url=${encodeURIComponent(url)}`;
 
-  const nextImage = () => setCurrentImage((prev) => (prev + 1) % generations.length);
-  const prevImage = () => setCurrentImage((prev) => (prev - 1 + generations.length) % generations.length);
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImage((prev) => (prev + 1) % generations.length);
+  };
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImage((prev) => (prev - 1 + generations.length) % generations.length);
+  };
 
   return (
     <motion.div

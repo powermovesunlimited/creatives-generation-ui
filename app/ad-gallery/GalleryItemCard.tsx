@@ -78,62 +78,58 @@ const GalleryItemCard: React.FC<GalleryItemCardProps> = ({ generation, gradient,
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.3 }}
     >
-      <Card 
+      <Card
         id={generation.id}
         className={`overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${gradient}`}
       >
-        <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <StatusIcon status={generation.status} queuePosition={generation.queue_position} />
-            <span className="text-sm font-medium text-muted-foreground">
-              {new Date(generation.created_at).toLocaleDateString()}
-            </span>
-          </div>
-          {generation.status === 'completed' && firstImage && (
-            <div className="mb-4 relative aspect-video">
-              <img
-                src={firstImage.url}
-                alt={requestData.headline || "Generated Ad Image"}
-                className="w-full h-full object-cover rounded-lg"
-              />
+        <Link href={`/ad-gallery/${generation.id}/generation`} className="w-full">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <StatusIcon status={generation.status} queuePosition={generation.queue_position} />
+              <span className="text-sm font-medium text-muted-foreground">
+                {new Date(generation.created_at).toLocaleDateString()}
+              </span>
             </div>
-          )}
-          <h2 className="text-2xl font-bold mb-2 text-foreground line-clamp-2">
-            {requestData.headline || "Untitled Ad"}
-          </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            {requestData.body_text.substring(0, 100)}...
-          </p>
-          <motion.div 
-            className="flex items-center space-x-2"
-            animate={isProcessing ? { opacity: [1, 0.5, 1] } : {}}
-            transition={isProcessing ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : {}}
-          >
-            <div className={`w-3 h-3 rounded-full ${getStatusColor(generation.status)}`}></div>
-            <span className="text-sm font-medium capitalize">
-              {generation.status}
-              {generation.queue_position && ` (Position: ${generation.queue_position})`}
-            </span>
-          </motion.div>
-          {generation.error_message && (
-            <p className="text-sm text-red-500 mt-2">{generation.error_message}</p>
-          )}
-        </CardContent>
+            {generation.status === 'completed' && firstImage && (
+              <div className="mb-4 relative aspect-video">
+                <img
+                  src={firstImage.url}
+                  alt={requestData.headline || "Generated Ad Image"}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+            )}
+            <h2 className="text-2xl font-bold mb-2 text-foreground line-clamp-2">
+              {requestData.headline || "Untitled Ad"}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {requestData.body_text.substring(0, 100)}...
+            </p>
+            <motion.div
+              className="flex items-center space-x-2"
+              animate={isProcessing ? { opacity: [1, 0.5, 1] } : {}}
+              transition={isProcessing ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : {}}
+            >
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(generation.status)}`}></div>
+              <span className="text-sm font-medium capitalize">
+                {generation.status}
+                {generation.queue_position && ` (Position: ${generation.queue_position})`}
+              </span>
+            </motion.div>
+            {generation.error_message && (
+              <p className="text-sm text-red-500 mt-2">{generation.error_message}</p>
+            )}
+          </CardContent>
+        </Link>
         <CardFooter className="bg-background/50 p-4 flex flex-col space-y-2">
-          <Link href={`/ad-gallery/${generation.id}/generation`} className="w-full">
-            <Button className="w-full bg-primary/90 hover:bg-primary text-primary-foreground">
-              View Details
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <Button 
+          <Button
             className="w-full bg-secondary/90 hover:bg-secondary text-secondary-foreground"
             onClick={() => onRegenerate(requestData)}
           >
             Regenerate
             <RefreshCw className="ml-2 h-4 w-4" />
           </Button>
-          <Button 
+          <Button
             className="w-full bg-red-500/90 hover:bg-red-500 text-white"
             onClick={() => onDelete(generation.id)}
           >

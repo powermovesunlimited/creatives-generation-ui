@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { SharedGalleryItem, SharedGalleryItemProps } from './SharedGalleryItemComponents';
+import { useRouter } from 'next/navigation';
 
 interface ModernGalleryItemCardProps extends SharedGalleryItemProps {
   onRegenerate: (requestData: RequestData) => void;
@@ -10,17 +11,37 @@ interface ModernGalleryItemCardProps extends SharedGalleryItemProps {
 
 const ModernGalleryItemCard: React.FC<ModernGalleryItemCardProps> = (props) => {
   const { onRegenerate, onDelete, requestData, id, ...sharedProps } = props;
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    router.push(`/ad-gallery/${id}/generation`);
+  };
 
   return (
-    <SharedGalleryItem {...sharedProps} requestData={requestData} id={id}>
-      <div className="flex justify-between mt-4">
-        <Link href={`/ad-gallery/${id}/generation`}>
-          <Button variant="outline">View All</Button>
-        </Link>
-        <Button variant="secondary" onClick={() => onRegenerate(requestData)}>Re-generate</Button>
-        <Button variant="destructive" onClick={() => onDelete(id)}>Delete</Button>
-      </div>
-    </SharedGalleryItem>
+    <div onClick={handleCardClick} className="cursor-pointer">
+      <SharedGalleryItem {...sharedProps} requestData={requestData} id={id}>
+        <div className="flex justify-between mt-4">
+          <Button 
+            variant="secondary" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onRegenerate(requestData);
+            }}
+          >
+            Re-generate
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(id);
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      </SharedGalleryItem>
+    </div>
   );
 };
 
